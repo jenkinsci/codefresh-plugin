@@ -67,16 +67,8 @@ public class CFApi {
     public List<CFService> getServices() throws MalformedURLException, IOException
     {
         String serviceUrl = httpsUrl + "/services";
-        URL serviceEp = new URL(serviceUrl);
-        HttpsURLConnection conn = (HttpsURLConnection) serviceEp.openConnection();
+        HttpsURLConnection conn = getConnection(serviceUrl);
         List<CFService> services = new ArrayList<CFService>();
-        conn.setRequestProperty("x-access-token", cfToken.getPlainText());
-        conn.setUseCaches(false);
-        conn.setDoOutput(true);
-        conn.setDoInput(true);
-        HttpsURLConnection.setFollowRedirects(true);
-        conn.setInstanceFollowRedirects(true);
-        conn.setRequestMethod("GET");
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
         JsonArray serviceList = new JsonParser().parse(jsonString).getAsJsonArray();
@@ -93,15 +85,7 @@ public class CFApi {
     public String getUser() throws MalformedURLException, IOException
     {
         String userUrl = httpsUrl + "/user";
-        URL userEp = new URL(userUrl);
-        HttpsURLConnection conn = (HttpsURLConnection) userEp.openConnection();
-        conn.setRequestProperty("x-access-token", cfToken.getPlainText());
-        conn.setUseCaches(false);
-        conn.setDoOutput(true);
-        conn.setDoInput(true);
-        HttpsURLConnection.setFollowRedirects(true);
-     //   HttpsURLConnection.setDefaultSSLSocketFactory(this.sf);
-        conn.setInstanceFollowRedirects(true);
+        HttpsURLConnection conn = getConnection(userUrl);
         conn.setRequestMethod("GET");
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
@@ -114,14 +98,7 @@ public class CFApi {
     {
         String buildUrl = httpsUrl + "/builds/" + serviceId ;
         String buildOptions = "";
-        URL buildEP = new URL(buildUrl);
-        HttpsURLConnection conn = (HttpsURLConnection) buildEP.openConnection();
-        conn.setRequestProperty("x-access-token", cfToken.getPlainText());
-        conn.setUseCaches(false);
-        conn.setDoOutput(true);
-        conn.setDoInput(true);
-        conn.setFollowRedirects(true);
-        conn.setInstanceFollowRedirects(true);
+        HttpsURLConnection conn = getConnection(buildUrl);
         conn.setRequestMethod("POST");
         
         if (! branch.isEmpty())

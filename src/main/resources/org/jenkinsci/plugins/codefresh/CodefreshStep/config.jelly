@@ -1,0 +1,22 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+    <f:entry title="Build" field="build"
+      description="Build a Service">
+      <f:checkbox  default="false"/>
+    </f:entry>
+    <f:entry field="cfService" title="Choose Codefresh service">
+      <f:select />
+    </f:entry>
+    <f:entry field="cfBranch" title="Branch name (optional)">
+      <f:textbox />
+    </f:entry>
+    <f:entry title="Launch Composition" field="launch"
+      description="Launch Composition">
+      <f:checkbox  default="false"/>
+    </f:entry>
+    <f:entry field="cfComposition" title="Choose composition to launch.">
+          <f:select />
+    </f:entry>
+   
+</j:jelly>

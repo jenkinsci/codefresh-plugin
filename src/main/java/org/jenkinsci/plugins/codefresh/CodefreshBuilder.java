@@ -6,6 +6,8 @@ import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.model.AbstractProject;
 import hudson.model.BuildBadgeAction;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.plugins.git.BranchSpec;
 import hudson.plugins.git.GitSCM;
 import hudson.scm.SCM;
@@ -24,6 +26,7 @@ import java.net.MalformedURLException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jenkins.model.lazy.LazyBuildMixIn;
 import org.eclipse.jgit.transport.RemoteConfig;
 import org.eclipse.jgit.transport.URIish;
 import org.kohsuke.stapler.QueryParameter;
@@ -107,8 +110,12 @@ public class CodefreshBuilder extends Builder {
         String branch = "";
         Boolean exitFlag = false;
 
-    
         CFApi api = new CFApi(getDescriptor().getCfToken());
+        if (!buildCf && !launchCf){
+            listener.getLogger().println("Codefresh - neither build nor composition launch was selected.\n Are you sure that's what you meant?" );      
+            return true;
+        }
+        
         if (buildCf) {
                 String serviceName = this.getCfService();
 
@@ -126,7 +133,7 @@ public class CodefreshBuilder extends Builder {
                     serviceName = gitPath.split("/")[2].split("\\.")[0];
                     serviceId = profile.getServiceIdByPath(gitPath);
                     if (serviceId == null) {
-                        listener.getLogger().println("\nUser " + getDescriptor().getCfUser() + "has no Codefresh service defined for url " + gitPath + ".\n Exiting.");
+                        listener.getLogger().println("\nUser " + getDescriptor().getCfUser() + " has no Codefresh service defined for url " + gitPath + ".\n Exiting.");
                         return false;
                     }
                 } else {
@@ -207,10 +214,112 @@ public class CodefreshBuilder extends Builder {
             }
 
         }
-        listener.getLogger().println("Codefresh - neither build nor composition launch was selected.\n Are you sure that's what you meant?" );      
         return true;
 
     }
+    
+
+    public boolean performStep(Run run, TaskListener listener) throws IOException, InterruptedException {
+
+        CFProfile profile = new CFProfile(getDescriptor().getCfUser(), getDescriptor().getCfToken());
+        String serviceId = "";
+        String gitPath = "";
+        String branch = "";
+        Boolean exitFlag = false;
+        
+         if (!buildCf && !launchCf){
+            listener.getLogger().println("Codefresh - neither build nor composition launch was selected.\n Are you sure that's what you meant?" );      
+            return true;
+        }
+        CFApi api = new CFApi(getDescriptor().getCfToken());
+        if (buildCf) {
+                String serviceName = this.getCfService();
+
+                if (serviceName == null) {
+                    listener.getLogger().println("\nUser " + getDescriptor().getCfUser() + "has no Codefresh service defined for url " + gitPath + ".\n Exiting.");
+                    return false;
+                } else {
+
+                    serviceId = profile.getServiceIdByName(cfService);
+                    branch = cfBranch;
+                    if (serviceId == null) {
+                        listener.getLogger().println("\nService Id not found for " + cfService + ".\n Exiting.");
+                        return false;
+                    }
+
+               }
+                
+
+            listener.getLogger().println("\nTriggering Codefresh build. Service: " + serviceName + ".\n");
+
+            String buildId = api.startBuild(serviceId, branch);
+            String progressId = api.getBuildProgress(buildId);
+            String status = api.getProgressStatus(progressId);
+            String progressUrl = api.getBuildUrl(progressId);
+            while (status.equals("running")) {
+                listener.getLogger().println("Codefresh build running - " + progressUrl + "\n Waiting 5 seconds...");
+                Thread.sleep(5 * 1000);
+                status = api.getProgressStatus(progressId);
+            }
+
+            switch (status) {
+                case "success":
+                    if (!launchCf) {
+                        run.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
+                    }
+                    listener.getLogger().println("Codefresh build successfull!");
+                    break;
+                case "error":
+                    run.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
+                    listener.getLogger().println("Codefresh build failed!");
+                    return false;
+                default:
+                    run.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
+                    listener.getLogger().println("Codefresh build exited with status " + status + ".");
+                    return false;
+            }
+        }
+
+        if (launchCf) {
+            try {
+                listener.getLogger().println("*******\n");
+                String compositionId = profile.getCompositionIdByName(cfComposition);
+                String launchId = api.launchComposition(compositionId);
+                String status = api.getProgressStatus(launchId);
+                String processUrl = api.getBuildUrl(launchId);
+                while (status.equals("running")) {
+                    listener.getLogger().println("Launching Codefresh composition environment: "+cfComposition+".\n Waiting 5 seconds...");
+                    Thread.sleep(5 * 1000);
+                    status = api.getProgressStatus(launchId);
+                }
+
+                switch (status) {
+                    case "success":
+                        String envUrl = api.getEnvUrl(launchId);
+                        run.addAction(new CodefreshBuildBadgeAction(envUrl, status));
+                        listener.getLogger().println("Codefresh environment launched successfully - " + envUrl);
+                        return true;
+                    case "error":
+                        run.addAction(new CodefreshBuildBadgeAction(processUrl, status));
+                        listener.getLogger().println("Codefresh enironment launch failed!");
+                        return false;
+                    default:
+                        run.addAction(new CodefreshBuildBadgeAction(processUrl, status));
+                        listener.getLogger().println("Codefresh environment launch exited with status " + status + ".");
+                        return false;
+                }
+            } catch (Exception ex) {
+                
+                Logger.getLogger(CodefreshBuilder.class.getName()).log(Level.SEVERE, null, ex);
+                listener.getLogger().println("Codefresh environment launch failed with exception: " + ex.getMessage() + ".");
+                run.addAction(new CodefreshBuildBadgeAction("", "error"));
+                return false;
+            }
+
+        }
+        return true;
+    }
+    
 
     @Override
     public DescriptorImpl getDescriptor() {
