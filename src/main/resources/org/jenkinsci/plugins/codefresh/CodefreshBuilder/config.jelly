@@ -4,7 +4,7 @@
   <f:entry title="Run Codefresh Build" field="build">
     <f:checkbox  default="false"/>
   </f:entry>
-  <f:optionalBlock name="selectService" title="Choose service to build" checked="${instance.selectService}">
+  <f:optionalBlock name="selectService" field="selectService" title="Choose service to build" checked="${instance.selectService}">
     <f:entry field="cfService" title="Choose Codefresh service">
       <f:select />
     </f:entry>
@@ -13,7 +13,7 @@
     </f:entry>
   </f:optionalBlock>
   
-  <f:optionalBlock name="launchCf" title="Launch a composition" checked="${instance.launchCf}">
+  <f:optionalBlock name="launchCf" field="launch" title="Launch a composition" checked="${instance.launchCf}">
     <f:entry field="cfComposition" title="Choose composition to launch.">
       <f:select />
     </f:entry>

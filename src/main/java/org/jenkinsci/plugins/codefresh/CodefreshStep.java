@@ -111,15 +111,17 @@ public class CodefreshStep extends AbstractStepImpl {
             ListBoxModel items = new ListBoxModel();
             //default to global config values if not set in step, but allow step to override all global settings
             Jenkins jenkins;
+            String cfToken = null;
             //Jenkins.getInstance() may return null, no message sent in that case
             try {
                 jenkins = Jenkins.getInstance();
+                CodefreshBuilder.DescriptorImpl cfDesc = jenkins.getDescriptorByType(CodefreshBuilder.DescriptorImpl.class);
+                cfToken = cfDesc.getCfToken().getPlainText();
             } catch (NullPointerException ne) {
                 Logger.getLogger(CodefreshStep.class.getName()).log(Level.SEVERE, null, ne);
                 return null;
             }
-            CodefreshBuilder.DescriptorImpl cfDesc = jenkins.getDescriptorByType(CodefreshBuilder.DescriptorImpl.class);
-            String cfToken = cfDesc.getCfToken().getPlainText();
+            
             if (cfToken == null){
                 throw new IOException("No Codefresh Integration Defined!!! Please configure in System Settings.");
             }
@@ -143,15 +145,17 @@ public class CodefreshStep extends AbstractStepImpl {
             ListBoxModel items = new ListBoxModel();
             //default to global config values if not set in step, but allow step to override all global settings
             Jenkins jenkins;
+            String cfToken = null;
             //Jenkins.getInstance() may return null, no message sent in that case
             try {
                 jenkins = Jenkins.getInstance();
+                CodefreshBuilder.DescriptorImpl cfDesc = jenkins.getDescriptorByType(CodefreshBuilder.DescriptorImpl.class);
+                cfToken = cfDesc.getCfToken().getPlainText();
             } catch (NullPointerException ne) {
                 Logger.getLogger(CodefreshStep.class.getName()).log(Level.SEVERE, null, ne);
                 return null;
             }
-            CodefreshBuilder.DescriptorImpl cfDesc = jenkins.getDescriptorByType(CodefreshBuilder.DescriptorImpl.class);
-            String cfToken = cfDesc.getCfToken().getPlainText();
+            
             if (cfToken == null){
                 throw new IOException("No Codefresh Integration Defined!!! Please configure in System Settings.");
             }
