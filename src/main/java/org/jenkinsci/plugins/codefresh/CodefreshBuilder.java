@@ -53,9 +53,9 @@ public class CodefreshBuilder extends Builder {
             this.cfService = null;
             this.cfBranch = "";
         }
-        
+
         if (launchCf != null) {
-            this.cfComposition = launchCf.cfComposition;   
+            this.cfComposition = launchCf.cfComposition;
             this.launchCf = true;
         } else {
             this.launchCf = false;
@@ -67,7 +67,7 @@ public class CodefreshBuilder extends Builder {
     public static class LaunchComposition {
 
         private final String cfComposition;
-   
+
         @DataBoundConstructor
         public LaunchComposition(String cfComposition) {
             this.cfComposition = cfComposition;
@@ -110,20 +110,20 @@ public class CodefreshBuilder extends Builder {
         }
         catch (NullPointerException ne)
         {
-            listener.getLogger().println("Couldn't get Codefresh profile details. Please check your system configuration.");      
+            listener.getLogger().println("Couldn't get Codefresh profile details. Please check your system configuration.");
             return false;
         }
-        
+
         String serviceId = "";
         String gitPath = "";
         String branch = "";
-     
+
         CFApi api = new CFApi(getDescriptor().getCfToken());
         if (!buildCf && !launchCf){
-            listener.getLogger().println("Codefresh - neither build nor composition launch was selected.\n Are you sure that's what you meant?" );      
+            listener.getLogger().println("Codefresh - neither build nor composition launch was selected.\n Are you sure that's what you meant?" );
             return true;
         }
-        
+
         if (buildCf) {
                 String serviceName = this.getCfService();
 
@@ -132,7 +132,7 @@ public class CodefreshBuilder extends Builder {
                     if (!(scm instanceof GitSCM)) {
                         listener.getLogger().println("Codefresh: you've specified you want to run a Codefresh build,\n but we didn't find"
                                 + " any git repository defined or service name specified for the build.\n"
-                                + "Are you sure that's what you meant?" );      
+                                + "Are you sure that's what you meant?" );
                         return false;
                     }
 
@@ -217,7 +217,7 @@ public class CodefreshBuilder extends Builder {
                         return false;
                 }
             } catch (Exception ex) {
-                
+
                 Logger.getLogger(CodefreshBuilder.class.getName()).log(Level.SEVERE, null, ex);
                 listener.getLogger().println("Codefresh environment launch failed with exception: " + ex.getMessage() + ".");
                 build.addAction(new CodefreshBuildBadgeAction("", "error"));
@@ -228,7 +228,7 @@ public class CodefreshBuilder extends Builder {
         return true;
 
     }
-    
+
 
     public boolean performStep(Run run, TaskListener listener) throws IOException, InterruptedException {
 
@@ -236,9 +236,9 @@ public class CodefreshBuilder extends Builder {
         String serviceId = "";
         String gitPath = "";
         String branch = "";
-        
+
          if (!buildCf && !launchCf){
-            listener.getLogger().println("Codefresh - neither build nor composition launch was selected.\n Are you sure that's what you meant?" );      
+            listener.getLogger().println("Codefresh - neither build nor composition launch was selected.\n Are you sure that's what you meant?" );
             return true;
         }
         CFApi api = new CFApi(getDescriptor().getCfToken());
@@ -258,7 +258,7 @@ public class CodefreshBuilder extends Builder {
                     }
 
                }
-                
+
 
             listener.getLogger().println("\nTriggering Codefresh build. Service: " + serviceName + ".\n");
 
@@ -319,7 +319,7 @@ public class CodefreshBuilder extends Builder {
                         return false;
                 }
             } catch (Exception ex) {
-                
+
                 Logger.getLogger(CodefreshBuilder.class.getName()).log(Level.SEVERE, null, ex);
                 listener.getLogger().println("Codefresh environment launch failed with exception: " + ex.getMessage() + ".");
                 run.addAction(new CodefreshBuildBadgeAction("", "error"));
@@ -329,7 +329,7 @@ public class CodefreshBuilder extends Builder {
         }
         return true;
     }
-    
+
 
     @Override
     public DescriptorImpl getDescriptor() {
@@ -339,6 +339,7 @@ public class CodefreshBuilder extends Builder {
     @Extension // This indicates to Jenkins that this is an implementation of an extension point.
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
+        load();
         private String cfUser;
         private Secret cfToken;
         private CFApi api;
@@ -410,7 +411,7 @@ public class CodefreshBuilder extends Builder {
             }
             return items;
         }
-        
+
         public ListBoxModel doFillCfCompositionItems(@QueryParameter("cfComposition") String cfComposition) throws IOException, MalformedURLException {
             ListBoxModel items = new ListBoxModel();
             if (cfToken == null) {
