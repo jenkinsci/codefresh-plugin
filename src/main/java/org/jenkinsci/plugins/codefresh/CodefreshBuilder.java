@@ -97,6 +97,14 @@ public class CodefreshBuilder extends Builder {
         return cfService;
     }
 
+    public String getCfBranch() {
+        return cfBranch;
+    }
+
+    public String getCfComposition() {
+        return cfComposition;
+    }
+
     public boolean isSelectService() {
         return selectService;
     }
@@ -164,7 +172,7 @@ public class CodefreshBuilder extends Builder {
             String progressId = api.getBuildProgress(buildId);
             String status = api.getProgressStatus(progressId);
             String progressUrl = api.getBuildUrl(progressId);
-            while (status.equals("running") || status.equals("pending")) {
+	        while (status.equals("pending") || status.equals("running")) {
                 listener.getLogger().println("Codefresh build " + status + " - " + progressUrl + "\n Waiting 5 seconds...");
                 Thread.sleep(5 * 1000);
                 status = api.getProgressStatus(progressId);
@@ -173,19 +181,17 @@ public class CodefreshBuilder extends Builder {
             switch (status) {
                 case "success":
                     if (!launchCf) {
-                        build.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
+                        build.addAction(new CodefreshBuildBadgeAction(progressUrl, status, "Build"));
                         build.addAction(new CodefreshEnvVarAction("CODEFRESH_BUILD_URL", progressUrl));
                     }
                     listener.getLogger().println("Codefresh build successfull!");
                     break;
                 case "error":
-                    build.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
-                    build.addAction(new CodefreshEnvVarAction("CODEFRESH_BUILD_URL", progressUrl));
+                    build.addAction(new CodefreshBuildBadgeAction(progressUrl, status, "Build"));
                     listener.getLogger().println("Codefresh build failed!");
                     return false;
                 default:
-                    build.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
-                    build.addAction(new CodefreshEnvVarAction("CODEFRESH_BUILD_URL", progressUrl));
+                    build.addAction(new CodefreshBuildBadgeAction(progressUrl, status, "Build"));
                     listener.getLogger().println("Codefresh build exited with status " + status + ".");
                     return false;
             }
@@ -198,7 +204,7 @@ public class CodefreshBuilder extends Builder {
                 String launchId = api.launchComposition(compositionId);
                 String status = api.getProgressStatus(launchId);
                 String processUrl = api.getBuildUrl(launchId);
-                while (status.equals("running") || status.equals("pending")) {
+                while (status.equals("pending") || status.equals("running")) {
                     listener.getLogger().println("Launching Codefresh composition environment: "+cfComposition+".\n Waiting 5 seconds...");
                     Thread.sleep(5 * 1000);
                     status = api.getProgressStatus(launchId);
@@ -207,16 +213,16 @@ public class CodefreshBuilder extends Builder {
                 switch (status) {
                     case "success":
                         String envUrl = api.getEnvUrl(launchId);
-                        build.addAction(new CodefreshBuildBadgeAction(envUrl, status));
+                        build.addAction(new CodefreshBuildBadgeAction(envUrl, status, "Environment"));
                         build.addAction(new CodefreshEnvVarAction("CODEFRESH_ENV_URL", envUrl));
                         listener.getLogger().println("Codefresh environment launched successfully - " + envUrl);
                         return true;
                     case "error":
-                        build.addAction(new CodefreshBuildBadgeAction(processUrl, status));
+                        build.addAction(new CodefreshBuildBadgeAction(processUrl, status, "Environment"));
                         listener.getLogger().println("Codefresh enironment launch failed!");
                         return false;
                     default:
-                        build.addAction(new CodefreshBuildBadgeAction(processUrl, status));
+                        build.addAction(new CodefreshBuildBadgeAction(processUrl, status, "Environment"));
                         listener.getLogger().println("Codefresh environment launch exited with status " + status + ".");
                         return false;
                 }
@@ -224,7 +230,7 @@ public class CodefreshBuilder extends Builder {
 
                 Logger.getLogger(CodefreshBuilder.class.getName()).log(Level.SEVERE, null, ex);
                 listener.getLogger().println("Codefresh environment launch failed with exception: " + ex.getMessage() + ".");
-                build.addAction(new CodefreshBuildBadgeAction("", "error"));
+                build.addAction(new CodefreshBuildBadgeAction("", "error", "Environment"));
                 return false;
             }
 
@@ -270,7 +276,7 @@ public class CodefreshBuilder extends Builder {
             String progressId = api.getBuildProgress(buildId);
             String status = api.getProgressStatus(progressId);
             String progressUrl = api.getBuildUrl(progressId);
-            while (status.equals("running") || status.equals("pending")) {
+            while (status.equals("pending") || status.equals("running")) {
                 listener.getLogger().println("Codefresh build " + status + " - " + progressUrl + "\n Waiting 5 seconds...");
                 Thread.sleep(5 * 1000);
                 status = api.getProgressStatus(progressId);
@@ -279,19 +285,16 @@ public class CodefreshBuilder extends Builder {
             switch (status) {
                 case "success":
                     if (!launchCf) {
-                        run.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
-                        run.addAction(new CodefreshEnvVarAction("CODEFRESH_BUILD_URL", progressUrl));
+                        run.addAction(new CodefreshBuildBadgeAction(progressUrl, status, "Build"));
                     }
                     listener.getLogger().println("Codefresh build successfull!");
                     break;
                 case "error":
-                    run.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
-                    run.addAction(new CodefreshEnvVarAction("CODEFRESH_BUILD_URL", progressUrl));
+                    run.addAction(new CodefreshBuildBadgeAction(progressUrl, status, "Build"));
                     listener.getLogger().println("Codefresh build failed!");
                     return false;
                 default:
-                    run.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
-                    run.addAction(new CodefreshEnvVarAction("CODEFRESH_BUILD_URL", progressUrl));
+                    run.addAction(new CodefreshBuildBadgeAction(progressUrl, status, "Build"));
                     listener.getLogger().println("Codefresh build exited with status " + status + ".");
                     return false;
             }
@@ -313,16 +316,15 @@ public class CodefreshBuilder extends Builder {
                 switch (status) {
                     case "success":
                         String envUrl = api.getEnvUrl(launchId);
-                        run.addAction(new CodefreshBuildBadgeAction(envUrl, status));
-                        run.addAction(new CodefreshEnvVarAction("CODEFRESH_ENV_URL", envUrl));
+                        run.addAction(new CodefreshBuildBadgeAction(envUrl, status, "Environment" ));
                         listener.getLogger().println("Codefresh environment launched successfully - " + envUrl);
                         return true;
                     case "error":
-                        run.addAction(new CodefreshBuildBadgeAction(processUrl, status));
+                        run.addAction(new CodefreshBuildBadgeAction(processUrl, status, "Environment" ));
                         listener.getLogger().println("Codefresh enironment launch failed!");
                         return false;
                     default:
-                        run.addAction(new CodefreshBuildBadgeAction(processUrl, status));
+                        run.addAction(new CodefreshBuildBadgeAction(processUrl, status, "Environment" ));
                         listener.getLogger().println("Codefresh environment launch exited with status " + status + ".");
                         return false;
                 }
@@ -330,7 +332,7 @@ public class CodefreshBuilder extends Builder {
 
                 Logger.getLogger(CodefreshBuilder.class.getName()).log(Level.SEVERE, null, ex);
                 listener.getLogger().println("Codefresh environment launch failed with exception: " + ex.getMessage() + ".");
-                run.addAction(new CodefreshBuildBadgeAction("", "error"));
+                run.addAction(new CodefreshBuildBadgeAction("", "error", "Environment" ));
                 return false;
             }
 
@@ -449,11 +451,13 @@ public class CodefreshBuilder extends Builder {
         private final String buildUrl;
         private final String buildStatus;
         private final String iconFile;
+        private final String type;
 
-        public CodefreshBuildBadgeAction(String buildUrl, String buildStatus) {
+        public CodefreshBuildBadgeAction(String buildUrl, String buildStatus, String type) {
             super();
             this.buildUrl = buildUrl;
             this.buildStatus = buildStatus;
+            this.type = type;
             switch (buildStatus) {
                 case "success":
                     this.iconFile = "/plugin/codefresh/images/16x16/leaves_green.png";
@@ -471,7 +475,7 @@ public class CodefreshBuilder extends Builder {
 
         @Override
         public String getDisplayName() {
-            return "Codefresh Build Page";
+            return "Codefresh " + type + " Url";
         }
 
         @Override
