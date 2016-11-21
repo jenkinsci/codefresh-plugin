@@ -164,8 +164,8 @@ public class CodefreshBuilder extends Builder {
             String progressId = api.getBuildProgress(buildId);
             String status = api.getProgressStatus(progressId);
             String progressUrl = api.getBuildUrl(progressId);
-            while (status.equals("running")) {
-                listener.getLogger().println("Codefresh build running - " + progressUrl + "\n Waiting 5 seconds...");
+            while (status.equals("running") || status.equals("pending")) {
+                listener.getLogger().println("Codefresh build " + status + " - " + progressUrl + "\n Waiting 5 seconds...");
                 Thread.sleep(5 * 1000);
                 status = api.getProgressStatus(progressId);
             }
@@ -174,15 +174,18 @@ public class CodefreshBuilder extends Builder {
                 case "success":
                     if (!launchCf) {
                         build.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
+                        build.addAction(new CodefreshEnvVarAction("CODEFRESH_BUILD_URL", progressUrl));
                     }
                     listener.getLogger().println("Codefresh build successfull!");
                     break;
                 case "error":
                     build.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
+                    build.addAction(new CodefreshEnvVarAction("CODEFRESH_BUILD_URL", progressUrl));
                     listener.getLogger().println("Codefresh build failed!");
                     return false;
                 default:
                     build.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
+                    build.addAction(new CodefreshEnvVarAction("CODEFRESH_BUILD_URL", progressUrl));
                     listener.getLogger().println("Codefresh build exited with status " + status + ".");
                     return false;
             }
@@ -195,7 +198,7 @@ public class CodefreshBuilder extends Builder {
                 String launchId = api.launchComposition(compositionId);
                 String status = api.getProgressStatus(launchId);
                 String processUrl = api.getBuildUrl(launchId);
-                while (status.equals("running")) {
+                while (status.equals("running") || status.equals("pending")) {
                     listener.getLogger().println("Launching Codefresh composition environment: "+cfComposition+".\n Waiting 5 seconds...");
                     Thread.sleep(5 * 1000);
                     status = api.getProgressStatus(launchId);
@@ -205,6 +208,7 @@ public class CodefreshBuilder extends Builder {
                     case "success":
                         String envUrl = api.getEnvUrl(launchId);
                         build.addAction(new CodefreshBuildBadgeAction(envUrl, status));
+                        build.addAction(new CodefreshEnvVarAction("CODEFRESH_ENV_URL", envUrl));
                         listener.getLogger().println("Codefresh environment launched successfully - " + envUrl);
                         return true;
                     case "error":
@@ -266,8 +270,8 @@ public class CodefreshBuilder extends Builder {
             String progressId = api.getBuildProgress(buildId);
             String status = api.getProgressStatus(progressId);
             String progressUrl = api.getBuildUrl(progressId);
-            while (status.equals("running")) {
-                listener.getLogger().println("Codefresh build running - " + progressUrl + "\n Waiting 5 seconds...");
+            while (status.equals("running") || status.equals("pending")) {
+                listener.getLogger().println("Codefresh build " + status + " - " + progressUrl + "\n Waiting 5 seconds...");
                 Thread.sleep(5 * 1000);
                 status = api.getProgressStatus(progressId);
             }
@@ -276,15 +280,18 @@ public class CodefreshBuilder extends Builder {
                 case "success":
                     if (!launchCf) {
                         run.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
+                        run.addAction(new CodefreshEnvVarAction("CODEFRESH_BUILD_URL", progressUrl));
                     }
                     listener.getLogger().println("Codefresh build successfull!");
                     break;
                 case "error":
                     run.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
+                    run.addAction(new CodefreshEnvVarAction("CODEFRESH_BUILD_URL", progressUrl));
                     listener.getLogger().println("Codefresh build failed!");
                     return false;
                 default:
                     run.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
+                    run.addAction(new CodefreshEnvVarAction("CODEFRESH_BUILD_URL", progressUrl));
                     listener.getLogger().println("Codefresh build exited with status " + status + ".");
                     return false;
             }
@@ -297,7 +304,7 @@ public class CodefreshBuilder extends Builder {
                 String launchId = api.launchComposition(compositionId);
                 String status = api.getProgressStatus(launchId);
                 String processUrl = api.getBuildUrl(launchId);
-                while (status.equals("running")) {
+                while (status.equals("running") || status.equals("pending")) {
                     listener.getLogger().println("Launching Codefresh composition environment: "+cfComposition+".\n Waiting 5 seconds...");
                     Thread.sleep(5 * 1000);
                     status = api.getProgressStatus(launchId);
@@ -307,6 +314,7 @@ public class CodefreshBuilder extends Builder {
                     case "success":
                         String envUrl = api.getEnvUrl(launchId);
                         run.addAction(new CodefreshBuildBadgeAction(envUrl, status));
+                        run.addAction(new CodefreshEnvVarAction("CODEFRESH_ENV_URL", envUrl));
                         listener.getLogger().println("Codefresh environment launched successfully - " + envUrl);
                         return true;
                     case "error":
@@ -339,10 +347,14 @@ public class CodefreshBuilder extends Builder {
     @Extension // This indicates to Jenkins that this is an implementation of an extension point.
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-        load();
         private String cfUser;
         private Secret cfToken;
         private CFApi api;
+
+        public DescriptorImpl()
+        {
+            load();
+        }
 
         public FormValidation doTestConnection(@QueryParameter("cfUser") final String cfUser, @QueryParameter("cfToken") final String cfToken) throws IOException {
             String userName = null;
