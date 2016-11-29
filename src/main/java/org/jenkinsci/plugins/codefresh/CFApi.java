@@ -74,7 +74,7 @@ public class CFApi {
         JsonArray serviceList = new JsonParser().parse(jsonString).getAsJsonArray();
         for (int i = 0; i < serviceList.size(); i++) {
             JsonObject obj = (JsonObject)serviceList.get(i);
-            services.add(new CFService(cfToken, obj.get("name").getAsString(), 
+            services.add(new CFService(cfToken, obj.get("name").getAsString(),
                                                 obj.get("_id").getAsString(),
                                                 obj.get("repoOwner").getAsString(),
                                                 obj.get("repoName").getAsString()));
@@ -100,7 +100,7 @@ public class CFApi {
         String buildOptions = "";
         HttpsURLConnection conn = getConnection(buildUrl);
         conn.setRequestMethod("POST");
-        
+
         if (! branch.isEmpty())
         {
             conn.setRequestProperty("Content-Type","application/json");
@@ -108,7 +108,7 @@ public class CFApi {
             options.addProperty("branch", branch);
             buildOptions = options.toString();
         }
-        
+
         try (OutputStreamWriter outs = new OutputStreamWriter(conn.getOutputStream(),"UTF-8")) {
             outs.write(buildOptions);
             outs.flush();
@@ -173,15 +173,15 @@ public class CFApi {
         HttpsURLConnection conn = getConnection(launchUrl);
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type","application/json");
-      
+
         JsonObject options = new JsonObject();
-        
+
         options.addProperty("repoOwner", repoOwner);
         options.addProperty("repoName", repoName);
         options.addProperty("branch", branch);
-      
+
         launchOptions = options.toString();
-        
+
         try (OutputStreamWriter outs = new OutputStreamWriter(conn.getOutputStream(),"UTF-8")) {
             outs.write(launchOptions);
             outs.flush();
@@ -198,17 +198,17 @@ public class CFApi {
         String progressId = progress.get("id").getAsString();
         return progressId;
     }
-    
+
     String launchComposition(String compositionId) throws Exception {
         String launchUrl = httpsUrl + "/compositions/"+compositionId+"/run";
         String launchOptions = "";
         HttpsURLConnection conn = getConnection(launchUrl);
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type","application/json");
-      
+
         //JsonObject options = new JsonObject();
         //launchOptions = options.toString();
-        
+
         try (OutputStreamWriter outs = new OutputStreamWriter(conn.getOutputStream(),"UTF-8")) {
             outs.write(launchOptions);
             outs.flush();
@@ -235,10 +235,49 @@ public class CFApi {
         JsonObject progress = new JsonParser().parse(jsonString).getAsJsonObject();
         JsonObject data = progress.getAsJsonObject("data");
         String envUrl = data.get("testitUrl").getAsString();
-        
+
         return envUrl;
     }
+
+    String getEnvIdByProgressID(String progressId) throws IOException {
+        String progressUrl = httpsUrl + "/progress/" + progressId;
+        HttpsURLConnection conn = getConnection(progressUrl);
+        conn.setRequestMethod("GET");
+        InputStream is = conn.getInputStream();
+        String jsonString = IOUtils.toString(is);
+        JsonObject progress = new JsonParser().parse(jsonString).getAsJsonObject();
+        JsonObject environment = progress.getAsJsonObject("data").getAsJsonObject("environment");
+        String envId = environment.get("_id").getAsString();
+
+        return envId;
+    }
     
+    String getEnvIdByURL(String envURL) throws IOException {
+        String getEnvsUrl = httpsUrl + "/environments";
+        HttpsURLConnection conn = getConnection(getEnvsUrl);
+        conn.setRequestMethod("GET");
+        InputStream is = conn.getInputStream();
+        String jsonString = IOUtils.toString(is);
+        String envId = "";
+        JsonArray envList = new JsonParser().parse(jsonString).getAsJsonArray();
+        for (int i = 0; i < envList.size(); i++) {
+            JsonObject environment = (JsonObject)envList.get(i);
+            envId = environment.get("_id").getAsString();
+            JsonArray instances = environment.get("instances").getAsJsonArray();
+            for (int k = 0; k < instances.size(); k++)
+            {
+                JsonArray urls = ((JsonObject)instances.get(k)).get("urls").getAsJsonObject().get("run").getAsJsonArray();
+                String publicURL = urls.get(0).getAsJsonObject().get("http").getAsJsonObject().get("public").getAsString();
+                if ( envURL.equals(publicURL))
+                {
+                    return envId;
+                }
+
+            }
+        }
+        return envId;
+    }
+
     public List<CFComposition> getCompositions() throws MalformedURLException, IOException
     {
         String compositionUrl = httpsUrl + "/compositions";
@@ -250,10 +289,24 @@ public class CFApi {
         JsonArray compositionList = new JsonParser().parse(jsonString).getAsJsonArray();
         for (int i = 0; i < compositionList.size(); i++) {
             JsonObject obj = (JsonObject)compositionList.get(i);
-            compositions.add(new CFComposition(obj.get("name").getAsString(), 
+            compositions.add(new CFComposition(obj.get("name").getAsString(),
                                                 obj.get("_id").getAsString()));
         }
         return compositions;
     }
-    
+
+    boolean terminateEnv(String envId) throws Exception {
+        String terminateUrl = httpsUrl + "/environments/"+envId+"/terminate";
+        String launchOptions = "";
+        HttpsURLConnection conn = getConnection(terminateUrl);
+        conn.setRequestMethod("GET");
+        
+        InputStream is = conn.getInputStream();
+        if (IOUtils.toString(is).equals("terminated"))
+        {
+                    return true;
+        }
+        return false;
+    }
+
 }
