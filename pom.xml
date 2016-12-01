@@ -84,7 +84,7 @@
     </dependencies>
 
     <artifactId>codefresh</artifactId>
-    <version>1.4</version>
+    <version>1.5-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <name>Codefresh Integration Plugin</name>
     <description>Trigger Codefresh Pipelines from Jenkins</description>
@@ -94,7 +94,7 @@
         <connection>scm:git:ssh://github.com/jenkinsci/codefresh-plugin.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/jenkinsci/codefresh-plugin.git</developerConnection>
         <url>https://github.com/jenkinsci/codefresh-plugin</url>
-      <tag>codefresh-1.4</tag>
+      <tag>HEAD</tag>
   </scm>
 
 
