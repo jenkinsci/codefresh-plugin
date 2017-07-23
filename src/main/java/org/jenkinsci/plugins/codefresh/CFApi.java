@@ -150,15 +150,15 @@ public class CFApi {
         return progress;
     }
 
-    String getProgressStatus(String progressId) throws IOException {
-        String progressUrl = httpsUrl + "/progress/" + progressId;
+    JsonObject getProcess(String processId) throws IOException {
+        String progressUrl = httpsUrl + "/builds/" + processId;
         HttpsURLConnection conn = getConnection(progressUrl);
         conn.setRequestMethod("GET");
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
         JsonObject progress = new JsonParser().parse(jsonString).getAsJsonObject();
-        String status = progress.get("status").getAsString();
-        return status;
+        //String status = progress.get("status").getAsString();
+        return progress;
     }
 
     String getBuildUrl(String progressId) throws IOException {
@@ -194,9 +194,9 @@ public class CFApi {
 
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
-        JsonObject progress = new JsonParser().parse(jsonString).getAsJsonObject();
-        String progressId = progress.get("id").getAsString();
-        return progressId;
+        JsonObject process = new JsonParser().parse(jsonString).getAsJsonObject();
+        String processId = process.get("id").getAsString();
+        return processId;
     }
 
     String launchComposition(String compositionId) throws Exception {
@@ -206,8 +206,6 @@ public class CFApi {
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type","application/json");
 
-        //JsonObject options = new JsonObject();
-        //launchOptions = options.toString();
 
         try (OutputStreamWriter outs = new OutputStreamWriter(conn.getOutputStream(),"UTF-8")) {
             outs.write(launchOptions);
@@ -221,34 +219,41 @@ public class CFApi {
 
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
-        JsonObject progress = new JsonParser().parse(jsonString).getAsJsonObject();
-        String progressId = progress.get("id").getAsString();
-        return progressId;
+        JsonObject process = new JsonParser().parse(jsonString).getAsJsonObject();
+        String processId = process.get("id").getAsString();
+        return processId;
     }
 
-    String getEnvUrl(String progressId) throws IOException {
-        String progressUrl = httpsUrl + "/progress/" + progressId;
-        HttpsURLConnection conn = getConnection(progressUrl);
-        conn.setRequestMethod("GET");
-        InputStream is = conn.getInputStream();
-        String jsonString = IOUtils.toString(is);
-        JsonObject progress = new JsonParser().parse(jsonString).getAsJsonObject();
-        JsonObject data = progress.getAsJsonObject("data");
-        String envUrl = data.get("testitUrl").getAsString();
-
+    String getEnvUrl(JsonObject process) throws IOException {
+        
+        
+        String progressId = process.get("progress_id").getAsString();
+        
+        JsonArray environment = getEnvByProgressID(progressId);
+        JsonArray instances = environment.get(0).getAsJsonObject().get("instances").getAsJsonArray();
+        JsonObject Urls = instances.get(0).getAsJsonObject().get("urls").getAsJsonObject();
+        JsonObject UrlObj = Urls.get("run").getAsJsonArray().get(0).getAsJsonObject();
+        JsonObject http = UrlObj.getAsJsonObject("http");
+        String envUrl = http.get("public").getAsString();
+        
         return envUrl;
     }
 
-    String getEnvIdByProgressID(String progressId) throws IOException {
-        String progressUrl = httpsUrl + "/progress/" + progressId;
+    JsonArray getEnvByProgressID(String progressId) throws IOException {
+        String progressUrl = httpsUrl + "/environments?progress=" + progressId;
         HttpsURLConnection conn = getConnection(progressUrl);
         conn.setRequestMethod("GET");
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
-        JsonObject progress = new JsonParser().parse(jsonString).getAsJsonObject();
-        JsonObject environment = progress.getAsJsonObject("data").getAsJsonObject("environment");
-        String envId = environment.get("_id").getAsString();
-
+        JsonArray environment = new JsonParser().parse(jsonString).getAsJsonArray();
+        
+        return environment;
+    }
+    
+    String getEnvIdByProgressID(String progressId) throws IOException {
+       
+        JsonArray environment = getEnvByProgressID(progressId);
+        String envId = environment.get(0).getAsJsonObject().get("_id").getAsString();
         return envId;
     }
     

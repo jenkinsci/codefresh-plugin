@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.codefresh;
 
+import com.google.gson.JsonObject;
 import hudson.Launcher;
 import hudson.Extension;
 import hudson.model.AbstractBuild;
@@ -169,13 +170,14 @@ public class CodefreshBuilder extends Builder {
             listener.getLogger().println("\nTriggering Codefresh build. Service: " + serviceName + ".\n");
 
             String buildId = api.startBuild(serviceId, branch);
-            String progressId = api.getBuildProgress(buildId);
-            String status = api.getProgressStatus(progressId);
-            String progressUrl = api.getBuildUrl(progressId);
-	        while (status.equals("pending") || status.equals("running")) {
+          //  String progressId = api.getBuildProgress(buildId);
+            JsonObject process = api.getProcess(buildId);
+            String status = process.get("status").getAsString();
+            String progressUrl = api.getBuildUrl(process.get("progress").getAsString());
+	        while (status.equals("pending") || status.equals("running") || status.equals("elected")) {
                 listener.getLogger().println("Codefresh build " + status + " - " + progressUrl + "\n Waiting 5 seconds...");
                 Thread.sleep(5 * 1000);
-                status = api.getProgressStatus(progressId);
+                status = api.getProcess(buildId).get("status").getAsString();
             }
 
             switch (status) {
@@ -202,17 +204,18 @@ public class CodefreshBuilder extends Builder {
                 listener.getLogger().println("*******\n");
                 String compositionId = profile.getCompositionIdByName(cfComposition);
                 String launchId = api.launchComposition(compositionId);
-                String status = api.getProgressStatus(launchId);
+                JsonObject process = api.getProcess(launchId);
                 String processUrl = api.getBuildUrl(launchId);
-                while (status.equals("pending") || status.equals("running")) {
+                String status = process.get("status").getAsString();
+                while (status.equals("pending") || status.equals("running") || status.equals("elected")) {
                     listener.getLogger().println("Launching Codefresh composition environment: "+cfComposition+".\n Waiting 5 seconds...");
                     Thread.sleep(5 * 1000);
-                    status = api.getProgressStatus(launchId);
+                    status = api.getProcess(launchId).get("status").getAsString();
                 }
 
                 switch (status) {
                     case "success":
-                        String envUrl = api.getEnvUrl(launchId);
+                        String envUrl = api.getEnvUrl(api.getProcess(launchId));
                         build.addAction(new CodefreshBuildBadgeAction(envUrl, status, "Environment"));
                         build.addAction(new CodefreshEnvVarAction("CODEFRESH_ENV_URL", envUrl));
                         listener.getLogger().println("Codefresh environment launched successfully - " + envUrl);
@@ -274,12 +277,13 @@ public class CodefreshBuilder extends Builder {
 
             String buildId = api.startBuild(serviceId, branch);
             String progressId = api.getBuildProgress(buildId);
-            String status = api.getProgressStatus(progressId);
+            JsonObject processs = api.getProcess(progressId);
+            String status = processs.get("status").getAsString();
             String progressUrl = api.getBuildUrl(progressId);
-            while (status.equals("pending") || status.equals("running")) {
+            while (status.equals("pending") || status.equals("running") || status.equals("elected")) {
                 listener.getLogger().println("Codefresh build " + status + " - " + progressUrl + "\n Waiting 5 seconds...");
                 Thread.sleep(5 * 1000);
-                status = api.getProgressStatus(progressId);
+                status = api.getProcess(progressId).get("status").getAsString();
             }
 
             switch (status) {
@@ -305,17 +309,18 @@ public class CodefreshBuilder extends Builder {
                 listener.getLogger().println("*******\n");
                 String compositionId = profile.getCompositionIdByName(cfComposition);
                 String launchId = api.launchComposition(compositionId);
-                String status = api.getProgressStatus(launchId);
+                JsonObject process = api.getProcess(launchId);
+                String status = process.get("status").getAsString();
                 String processUrl = api.getBuildUrl(launchId);
-                while (status.equals("running") || status.equals("pending")) {
+                while (status.equals("pending") || status.equals("running") || status.equals("elected")) {
                     listener.getLogger().println("Launching Codefresh composition environment: "+cfComposition+".\n Waiting 5 seconds...");
                     Thread.sleep(5 * 1000);
-                    status = api.getProgressStatus(launchId);
+                    status = api.getProcess(launchId).get("status").getAsString();
                 }
 
                 switch (status) {
                     case "success":
-                        String envUrl = api.getEnvUrl(launchId);
+                        String envUrl = api.getEnvUrl(api.getProcess(launchId));
                         run.addAction(new CodefreshBuildBadgeAction(envUrl, status, "Environment" ));
                         listener.getLogger().println("Codefresh environment launched successfully - " + envUrl);
                         return true;
