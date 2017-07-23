@@ -28,9 +28,12 @@ import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
+import hudson.model.Action;
+import hudson.model.BuildBadgeAction;
 import hudson.model.BuildListener;
 import hudson.model.Project;
 import hudson.model.Result;
+import hudson.model.Run;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
@@ -38,10 +41,12 @@ import hudson.tasks.Publisher;
 import hudson.tasks.Recorder;
 import java.io.IOException;
 import static java.lang.System.in;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
+import org.jenkinsci.plugins.codefresh.CodefreshBuilder.CodefreshBuildBadgeAction;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -77,10 +82,12 @@ public class CFEnvTerminator extends Recorder {
             return true;
         }
         
+        listener.getLogger().print("\nCodefresh environment termination: ");
         try {
              
             String envUrl = build.getEnvironment(listener).get("CODEFRESH_ENV_URL");
-            if ( envUrl.isEmpty() )
+            //listener.getLogger().println("ENV url is " + envUrl);
+            if ( envUrl == null || envUrl.isEmpty() )
             {
                 listener.getLogger().println("Couldn't get Codefresh environment url. Did you launch one?");
                 return true;
@@ -109,6 +116,19 @@ public class CFEnvTerminator extends Recorder {
                         else
                         {
                             listener.getLogger().println("Successfully terminated Codefresh environment " + envId + " at " + envUrl);
+                            // remove environment url badge
+                            List<BuildBadgeAction> actions = build.getBadgeActions();
+                            for(Iterator badgeIterator = actions.iterator();
+                                        badgeIterator.hasNext();) {
+                                BuildBadgeAction b = (BuildBadgeAction) badgeIterator.next();
+                                if(b instanceof CodefreshBuildBadgeAction) {
+                                        if (((CodefreshBuildBadgeAction) b).getType().equals("Environment")){
+                                            ((CodefreshBuildBadgeAction) b).setDisplayName("Codefresh Environment Terminated");
+                                            ((CodefreshBuildBadgeAction) b).setUrl(null);
+                                        
+                                        }
+                                }
+                              }
                             return true;
                         }
                         

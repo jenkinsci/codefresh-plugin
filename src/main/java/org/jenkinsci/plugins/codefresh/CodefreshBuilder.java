@@ -25,6 +25,7 @@ import java.io.IOException;
 import static java.lang.Thread.sleep;
 import java.net.MalformedURLException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.lazy.LazyBuildMixIn;
@@ -170,23 +171,24 @@ public class CodefreshBuilder extends Builder {
             listener.getLogger().println("\nTriggering Codefresh build. Service: " + serviceName + ".\n");
 
             String buildId = api.startBuild(serviceId, branch);
-          //  String progressId = api.getBuildProgress(buildId);
             JsonObject process = api.getProcess(buildId);
             String status = process.get("status").getAsString();
-            String progressUrl = api.getBuildUrl(process.get("progress").getAsString());
+            String progressUrl = api.getBuildUrl(buildId);
 	        while (status.equals("pending") || status.equals("running") || status.equals("elected")) {
                 listener.getLogger().println("Codefresh build " + status + " - " + progressUrl + "\n Waiting 5 seconds...");
                 Thread.sleep(5 * 1000);
                 status = api.getProcess(buildId).get("status").getAsString();
             }
 
+            listener.getLogger().print(api.getFinalLogs(api.getProcess(buildId).get("progress").getAsString() + "\n"));
+            
             switch (status) {
                 case "success":
                     if (!launchCf) {
                         build.addAction(new CodefreshBuildBadgeAction(progressUrl, status, "Build"));
                         build.addAction(new CodefreshEnvVarAction("CODEFRESH_BUILD_URL", progressUrl));
                     }
-                    listener.getLogger().println("Codefresh build successfull!");
+                    listener.getLogger().println("\n\nCodefresh build successfull!");
                     break;
                 case "error":
                     build.addAction(new CodefreshBuildBadgeAction(progressUrl, status, "Build"));
@@ -212,21 +214,21 @@ public class CodefreshBuilder extends Builder {
                     Thread.sleep(5 * 1000);
                     status = api.getProcess(launchId).get("status").getAsString();
                 }
-
+                listener.getLogger().print(api.getFinalLogs(api.getProcess(launchId).get("progress").getAsString()  + "\n"));
                 switch (status) {
                     case "success":
                         String envUrl = api.getEnvUrl(api.getProcess(launchId));
                         build.addAction(new CodefreshBuildBadgeAction(envUrl, status, "Environment"));
                         build.addAction(new CodefreshEnvVarAction("CODEFRESH_ENV_URL", envUrl));
-                        listener.getLogger().println("Codefresh environment launched successfully - " + envUrl);
+                        listener.getLogger().println("\nCodefresh environment launched successfully - " + envUrl);
                         return true;
                     case "error":
                         build.addAction(new CodefreshBuildBadgeAction(processUrl, status, "Environment"));
-                        listener.getLogger().println("Codefresh enironment launch failed!");
+                        listener.getLogger().println("\nCodefresh enironment launch failed!");
                         return false;
                     default:
                         build.addAction(new CodefreshBuildBadgeAction(processUrl, status, "Environment"));
-                        listener.getLogger().println("Codefresh environment launch exited with status " + status + ".");
+                        listener.getLogger().println("\n Codefresh environment launch exited with status " + status + ".");
                         return false;
                 }
             } catch (Exception ex) {
@@ -276,16 +278,20 @@ public class CodefreshBuilder extends Builder {
             listener.getLogger().println("\nTriggering Codefresh build. Service: " + serviceName + ".\n");
 
             String buildId = api.startBuild(serviceId, branch);
-            String progressId = api.getBuildProgress(buildId);
-            JsonObject processs = api.getProcess(progressId);
-            String status = processs.get("status").getAsString();
-            String progressUrl = api.getBuildUrl(progressId);
+            JsonObject process = api.getProcess(buildId);
+            String status = process.get("status").getAsString();
+            String progressUrl = api.getBuildUrl(buildId);
+            Integer timer = 0;
             while (status.equals("pending") || status.equals("running") || status.equals("elected")) {
-                listener.getLogger().println("Codefresh build " + status + " - " + progressUrl + "\n Waiting 5 seconds...");
+                listener.getLogger().println("Codefresh build " + status + " - " + progressUrl + "\n");
                 Thread.sleep(5 * 1000);
-                status = api.getProcess(progressId).get("status").getAsString();
+                timer += 5000;
+                status = api.getProcess(buildId).get("status").getAsString();
             }
-
+            String time = String.format("%02d min, %02d sec",TimeUnit.MILLISECONDS.toMinutes(timer),TimeUnit.MILLISECONDS.toSeconds(timer));
+            listener.getLogger().println("Codefresh build finished. Duration: "+ time);
+            listener.getLogger().print(api.getFinalLogs(api.getProcess(buildId).get("progress").getAsString() + "\n"));
+            
             switch (status) {
                 case "success":
                     if (!launchCf) {
@@ -453,16 +459,18 @@ public class CodefreshBuilder extends Builder {
 
     public static class CodefreshBuildBadgeAction implements BuildBadgeAction {
 
-        private final String buildUrl;
+        private String buildUrl;
         private final String buildStatus;
         private final String iconFile;
         private final String type;
+        private String displayName;
 
         public CodefreshBuildBadgeAction(String buildUrl, String buildStatus, String type) {
             super();
             this.buildUrl = buildUrl;
             this.buildStatus = buildStatus;
             this.type = type;
+            this.displayName = "Codefresh " + type + " Url";
             switch (buildStatus) {
                 case "success":
                     this.iconFile = "/plugin/codefresh/images/16x16/leaves_green.png";
@@ -480,7 +488,7 @@ public class CodefreshBuilder extends Builder {
 
         @Override
         public String getDisplayName() {
-            return "Codefresh " + type + " Url";
+            return displayName;
         }
 
         @Override
@@ -492,7 +500,18 @@ public class CodefreshBuilder extends Builder {
         public String getUrlName() {
             return buildUrl;
         }
+        
+        public String getType() {
+            return type;
+        }
 
+        public void setUrl(String Url) {
+            this.buildUrl = Url;
+        }
+        
+        public void setDisplayName(String name) {
+            this.displayName = name;
+        }
     }
 
 }

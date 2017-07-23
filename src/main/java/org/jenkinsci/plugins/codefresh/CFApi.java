@@ -30,6 +30,8 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import org.apache.commons.io.IOUtils;
 
+import org.jsoup.*;
+
 /**
  *
  * @author antweiss
@@ -217,11 +219,25 @@ public class CFApi {
         }
 
 
-        InputStream is = conn.getInputStream();
-        String jsonString = IOUtils.toString(is);
-        JsonObject process = new JsonParser().parse(jsonString).getAsJsonObject();
-        String processId = process.get("id").getAsString();
-        return processId;
+        try (InputStream is = conn.getInputStream()){
+            String jsonString = IOUtils.toString(is);
+            JsonObject process = new JsonParser().parse(jsonString).getAsJsonObject();
+            String processId = process.get("id").getAsString();
+            return processId;
+        }
+        catch (Exception e)
+        {
+            try (InputStream es = conn.getErrorStream()){
+                String jsonString = IOUtils.toString(es);
+                JsonObject out = new JsonParser().parse(jsonString).getAsJsonObject();
+                String message = out.get("message").getAsString();
+                throw new java.io.IOException(message);
+            }
+            catch (Exception i)
+            {
+                throw i;
+            }
+        }
     }
 
     String getEnvUrl(JsonObject process) throws IOException {
@@ -281,6 +297,15 @@ public class CFApi {
             }
         }
         return envId;
+    }
+    
+    String getFinalLogs(String progressId) throws IOException {
+        String getLogsUrl = httpsUrl + "/progress/download/" + progressId ;
+        HttpsURLConnection conn = getConnection(getLogsUrl);
+        conn.setRequestMethod("GET");
+        InputStream is = conn.getInputStream();
+        String logsHtml = IOUtils.toString(is);
+        return Jsoup.parse(logsHtml).text();
     }
 
     public List<CFComposition> getCompositions() throws MalformedURLException, IOException
