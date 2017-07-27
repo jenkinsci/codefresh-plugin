@@ -102,14 +102,16 @@ public class CFApi {
         String buildOptions = "";
         HttpsURLConnection conn = getConnection(buildUrl);
         conn.setRequestMethod("POST");
-
-        if (! branch.isEmpty())
-        {
-            conn.setRequestProperty("Content-Type","application/json");
-            JsonObject options = new JsonObject();
-            options.addProperty("branch", branch);
-            buildOptions = options.toString();
+        //branch can not be empty - use master if no value provided
+        if (branch.isEmpty())
+        { 
+            branch = "master";
         }
+        
+        conn.setRequestProperty("Content-Type","application/json");
+        JsonObject options = new JsonObject();
+        options.addProperty("branch", branch);
+        buildOptions = options.toString();
 
         try (OutputStreamWriter outs = new OutputStreamWriter(conn.getOutputStream(),"UTF-8")) {
             outs.write(buildOptions);
@@ -218,14 +220,14 @@ public class CFApi {
             throw e;
         }
 
-
+        String processId = null;
+                
         try (InputStream is = conn.getInputStream()){
             String jsonString = IOUtils.toString(is);
             JsonObject process = new JsonParser().parse(jsonString).getAsJsonObject();
-            String processId = process.get("id").getAsString();
-            return processId;
+            processId = process.get("id").getAsString();
         }
-        catch (Exception e)
+        catch (IOException e)
         {
             try (InputStream es = conn.getErrorStream()){
                 String jsonString = IOUtils.toString(es);
@@ -238,6 +240,7 @@ public class CFApi {
                 throw i;
             }
         }
+        return processId;
     }
 
     String getEnvUrl(JsonObject process) throws IOException {
