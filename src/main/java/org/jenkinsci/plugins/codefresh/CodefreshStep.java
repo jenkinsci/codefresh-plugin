@@ -56,21 +56,21 @@ public class CodefreshStep extends AbstractStepImpl {
     
     
     @DataBoundConstructor
-    public CodefreshStep(boolean build, 
-                         String cfService,
-                         boolean launch,
-                         String cfComposition) {
-        this.build = build;
-        this.cfService = cfService;
-        this.launch = launch;
-        this.cfComposition = cfComposition;
+    public CodefreshStep() {
+        this.cfService = "";
+        this.cfComposition = "";
                          
     }
 
+    
     public String getCfService() {
         return cfService;
     }
 
+    @DataBoundSetter
+    public void setCfService(String cfService) {
+        this.cfService = cfService;
+    }
     @DataBoundSetter
     public void setCfBranch(String cfBranch) {
         this.cfBranch = cfBranch;
@@ -84,8 +84,23 @@ public class CodefreshStep extends AbstractStepImpl {
         return cfComposition;
     }
     
+    @DataBoundSetter
+    public void setCfComposition(String cfComposition) {
+        this.cfComposition = cfComposition;
+    }
+    
+    @DataBoundSetter
+    public void setBuild(boolean build) {
+        this.build = build;
+    }
+    
     public boolean getBuild(){
         return build;
+    }
+    
+    @DataBoundSetter
+    public void setLaunch(boolean launch) {
+        this.launch = launch;
     }
     
     public boolean getLaunch(){
@@ -104,7 +119,7 @@ public class CodefreshStep extends AbstractStepImpl {
         
         @Override
         public String getDisplayName() {
-            return "Run a Codefresh Build";
+            return "Trigger a Codefresh Pipeline";
         }
         
         public ListBoxModel doFillCfServiceItems(@QueryParameter("cfService") String cfService) throws  IOException, MalformedURLException {
@@ -125,6 +140,7 @@ public class CodefreshStep extends AbstractStepImpl {
             if (cfToken == null){
                 throw new IOException("No Codefresh Integration Defined!!! Please configure in System Settings.");
             }
+            
             try {
                 CFApi api = new CFApi(Secret.fromString(cfToken));
                 for (CFService srv: api.getServices())

@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.codefresh;
 
 import com.google.gson.JsonObject;
+import hudson.AbortException;
 import hudson.Launcher;
 import hudson.Extension;
 import hudson.model.AbstractBuild;
@@ -314,6 +315,10 @@ public class CodefreshBuilder extends Builder {
             try {
                 listener.getLogger().println("*******\n");
                 String compositionId = profile.getCompositionIdByName(cfComposition);
+                if (compositionId == null){
+                    //listener.getLogger().println("Composition " + cfComposition + " not found. Exiting");
+                    throw new AbortException("Composition " + cfComposition + " not found. Exiting");
+                }
                 String launchId = api.launchComposition(compositionId);
                 JsonObject process = api.getProcess(launchId);
                 String status = process.get("status").getAsString();
@@ -324,6 +329,8 @@ public class CodefreshBuilder extends Builder {
                     status = api.getProcess(launchId).get("status").getAsString();
                 }
 
+                listener.getLogger().print(api.getFinalLogs(api.getProcess(launchId).get("progress").getAsString()  + "\n"));
+                
                 switch (status) {
                     case "success":
                         String envUrl = api.getEnvUrl(api.getProcess(launchId));
@@ -344,7 +351,7 @@ public class CodefreshBuilder extends Builder {
                 Logger.getLogger(CodefreshBuilder.class.getName()).log(Level.SEVERE, null, ex);
                 listener.getLogger().println("Codefresh environment launch failed with exception: " + ex.getMessage() + ".");
                 run.addAction(new CodefreshBuildBadgeAction("", "error", "Environment" ));
-                return false;
+                throw new AbortException(ex.getMessage());
             }
 
         }
@@ -357,7 +364,7 @@ public class CodefreshBuilder extends Builder {
         return (DescriptorImpl) super.getDescriptor();
     }
 
-    @Extension // This indicates to Jenkins that this is an implementation of an extension point.
+    @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
         private String cfUser;

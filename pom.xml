@@ -17,7 +17,7 @@
     </developers>
 
     <properties>
-        <jenkins.version>1.651.2</jenkins.version>
+        <jenkins.version>2.7.3</jenkins.version>
     </properties>
 
     <dependencies>

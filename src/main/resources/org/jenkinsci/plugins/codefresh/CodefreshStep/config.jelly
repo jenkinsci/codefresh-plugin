@@ -2,20 +2,20 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 
     <f:entry title="Build" field="build"
-      description="Build a Service">
+      description="Build a Pipeline">
       <f:checkbox  default="false"/>
     </f:entry>
-    <f:entry field="cfService" title="Choose Codefresh service">
+    <f:entry field="cfService" title="Codefresh pipeline name" name="Pipeline">
       <f:select />
     </f:entry>
-    <f:entry field="cfBranch" title="Branch name (optional)">
+    <f:entry field="cfBranch" title="Branch name (optional)" name="Branch (optional)">
       <f:textbox />
     </f:entry>
     <f:entry title="Launch Composition" field="launch"
-      description="Launch Composition">
+      description="Launch Composition" name="Launch">
       <f:checkbox  default="false"/>
     </f:entry>
-    <f:entry field="cfComposition" title="Choose composition to launch.">
+    <f:entry field="cfComposition" title="Choose composition to launch." name="Composition">
           <f:select />
     </f:entry>
    
