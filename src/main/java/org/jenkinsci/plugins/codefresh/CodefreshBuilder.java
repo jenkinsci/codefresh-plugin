@@ -298,7 +298,7 @@ public class CodefreshBuilder extends Builder {
                     if (!launchCf) {
                         run.addAction(new CodefreshBuildBadgeAction(progressUrl, status, "Build"));
                     }
-                    listener.getLogger().println("Codefresh build successfull!");
+                    listener.getLogger().println("\n\nCodefresh build successfull!");
                     break;
                 case "error":
                     run.addAction(new CodefreshBuildBadgeAction(progressUrl, status, "Build"));
