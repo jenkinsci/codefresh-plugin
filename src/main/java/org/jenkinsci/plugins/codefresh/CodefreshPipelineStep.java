@@ -32,6 +32,7 @@ import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
@@ -47,29 +48,25 @@ import org.kohsuke.stapler.QueryParameter;
  *
  * @author antweiss
  */
-public class CodefreshStep extends AbstractStepImpl {
-    private String cfService = "";
+public class CodefreshPipelineStep extends AbstractStepImpl {
+    private String cfPipeline = "";
     private String cfBranch = "";
-    private String cfComposition = "";
-    private Boolean build = false;
-    private Boolean launch = false;
-    
+    private List<CFVariable> cfVars = null;  
     
     @DataBoundConstructor
-    public CodefreshStep() {
-        this.cfService = "";
-        this.cfComposition = "";
+    public CodefreshPipelineStep() {
+        this.cfPipeline = "";
                          
     }
 
     
-    public String getCfService() {
-        return cfService;
+    public String getCfPipeline() {
+        return cfPipeline;
     }
 
     @DataBoundSetter
-    public void setCfService(String cfService) {
-        this.cfService = cfService;
+    public void setCfPipeline(String cfService) {
+        this.cfPipeline = cfService;
     }
     @DataBoundSetter
     public void setCfBranch(String cfBranch) {
@@ -79,33 +76,12 @@ public class CodefreshStep extends AbstractStepImpl {
     public String getCfBranch() {
         return cfBranch;
     }
-    
-    public String getCfComposition() {
-        return cfComposition;
+     @DataBoundSetter
+    public void setCfVars(List<CFVariable> cfVars) {
+        this.cfVars = cfVars;
     }
     
-    @DataBoundSetter
-    public void setCfComposition(String cfComposition) {
-        this.cfComposition = cfComposition;
-    }
     
-    @DataBoundSetter
-    public void setBuild(boolean build) {
-        this.build = build;
-    }
-    
-    public boolean getBuild(){
-        return build;
-    }
-    
-    @DataBoundSetter
-    public void setLaunch(boolean launch) {
-        this.launch = launch;
-    }
-    
-    public boolean getLaunch(){
-        return launch;
-    }
     @Extension
     public static final class DescriptorImpl extends AbstractStepDescriptorImpl {
         
@@ -114,7 +90,7 @@ public class CodefreshStep extends AbstractStepImpl {
         }
         @Override
         public String getFunctionName() {
-            return "codefresh";
+            return "codefreshRun";
         }
         
         @Override
@@ -122,18 +98,16 @@ public class CodefreshStep extends AbstractStepImpl {
             return "Trigger a Codefresh Pipeline";
         }
         
-        public ListBoxModel doFillCfServiceItems(@QueryParameter("cfService") String cfService) throws  IOException, MalformedURLException {
+        public ListBoxModel doFillCfPipelineItems(@QueryParameter("cfPipeline") String cfPipeline) throws  IOException, MalformedURLException {
             ListBoxModel items = new ListBoxModel();
             //default to global config values if not set in step, but allow step to override all global settings
-            Jenkins jenkins;
             String cfToken = null;
-            //Jenkins.getInstance() may return null, no message sent in that case
             try {
-                jenkins = Jenkins.getInstance();
-                CodefreshBuilder.DescriptorImpl cfDesc = jenkins.getDescriptorByType(CodefreshBuilder.DescriptorImpl.class);
-                cfToken = cfDesc.getCfToken().getPlainText();
+               
+                CFGlobalConfig config = CFGlobalConfig.get();
+                cfToken = config.getCfToken().getPlainText();
             } catch (NullPointerException ne) {
-                Logger.getLogger(CodefreshStep.class.getName()).log(Level.SEVERE, null, ne);
+                Logger.getLogger(CodefreshPipelineStep.class.getName()).log(Level.SEVERE, null, ne);
                 return null;
             }
             
@@ -146,41 +120,7 @@ public class CodefreshStep extends AbstractStepImpl {
                 for (CFService srv: api.getServices())
                 {
                     String name = srv.getName();
-                    items.add(new ListBoxModel.Option(name, name, cfService.equals(name)));
-
-                }
-            }
-            catch (IOException e)
-            {
-                    throw e;
-            }
-            return items;
-        }
-        
-        public ListBoxModel doFillCfCompositionItems(@QueryParameter("cfComposition") String cfComposition) throws  IOException, MalformedURLException {
-            ListBoxModel items = new ListBoxModel();
-            //default to global config values if not set in step, but allow step to override all global settings
-            Jenkins jenkins;
-            String cfToken = null;
-            //Jenkins.getInstance() may return null, no message sent in that case
-            try {
-                jenkins = Jenkins.getInstance();
-                CodefreshBuilder.DescriptorImpl cfDesc = jenkins.getDescriptorByType(CodefreshBuilder.DescriptorImpl.class);
-                cfToken = cfDesc.getCfToken().getPlainText();
-            } catch (NullPointerException ne) {
-                Logger.getLogger(CodefreshStep.class.getName()).log(Level.SEVERE, null, ne);
-                return null;
-            }
-            
-            if (cfToken == null){
-                throw new IOException("No Codefresh Integration Defined!!! Please configure in System Settings.");
-            }
-            try {
-                CFApi api = new CFApi(Secret.fromString(cfToken));
-                for (CFComposition composition: api.getCompositions())
-                {
-                    String name = composition.getName();
-                    items.add(new ListBoxModel.Option(name, name, cfComposition.equals(name)));
+                    items.add(new ListBoxModel.Option(name, name, cfPipeline.equals(name)));
 
                 }
             }
@@ -197,7 +137,7 @@ public class CodefreshStep extends AbstractStepImpl {
     public static final class Execution extends AbstractSynchronousNonBlockingStepExecution<Boolean> {
 
         @Inject
-        private transient CodefreshStep step;
+        private transient CodefreshPipelineStep step;
 
         @StepContextParameter
         private transient Run run;
@@ -214,21 +154,18 @@ public class CodefreshStep extends AbstractStepImpl {
         @Override
         protected Boolean run() throws Exception {
             
-            CodefreshBuilder.LaunchComposition composition = null; 
-            CodefreshBuilder.SelectService service = null;
-            if (!step.launch && !step.build) {    
-                listener.getLogger().println("Please set either codefresh build or launch to true. Check your configuration");
-                return false;
+             CodefreshPipelineBuilder.SelectService service = null;
+             CodefreshPipelineBuilder.SetCFVars vars = null;
+          
+          
+            if (step.cfPipeline != null){
+                service = new CodefreshPipelineBuilder.SelectService(step.cfPipeline, step.cfBranch);
             }
-            if (step.launch && step.cfComposition != null){
-                composition = new CodefreshBuilder.LaunchComposition(step.cfComposition);
-            }
-            if (step.build && step.cfService != null){
-                service = new CodefreshBuilder.SelectService(step.cfService, step.cfBranch);
+            if (step.cfVars != null){
+                vars = new CodefreshPipelineBuilder.SetCFVars(step.cfVars);
             }
             
-            CodefreshBuilder builder = new CodefreshBuilder(composition,
-                                                            step.build, service);
+            CodefreshPipelineBuilder builder = new CodefreshPipelineBuilder(service, vars);
             return builder.performStep(run,listener);
         }
         

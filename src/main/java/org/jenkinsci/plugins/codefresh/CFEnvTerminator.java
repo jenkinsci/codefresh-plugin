@@ -46,7 +46,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
-import org.jenkinsci.plugins.codefresh.CodefreshBuilder.CodefreshBuildBadgeAction;
+import org.jenkinsci.plugins.codefresh.CodefreshBuildBadgeAction;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -93,59 +93,51 @@ public class CFEnvTerminator extends Recorder {
                 return true;
             }
             
-            Jenkins inst = Jenkins.getInstance();
-            if ( null!= inst)
+                
+            CFGlobalConfig config = CFGlobalConfig.get();                   
+            if ( config == null  )
             {
-                CodefreshBuilder.DescriptorImpl cfbd = (CodefreshBuilder.DescriptorImpl) inst.getDescriptor(CodefreshBuilder.class);
-            
-                if ( cfbd == null  )
-                {
-                    listener.getLogger().println("Couldn't get Codefresh configuration. Did you define one?");
-                     return true;
-                }
-                CFApi api = new CFApi(cfbd.getCfToken());
-            
-            
-                try {
-                        String envId = api.getEnvIdByURL(envUrl);
-                        if (! api.terminateEnv(envId))
-                        {
-                            listener.getLogger().println("Couldn't terminate Codefresh environment. Did you launch one?");
-                            return true;
-                        }
-                        else
-                        {
-                            listener.getLogger().println("Successfully terminated Codefresh environment " + envId + " at " + envUrl);
-                            // remove environment url badge
-                            List<BuildBadgeAction> actions = build.getBadgeActions();
-                            for(Iterator badgeIterator = actions.iterator();
-                                        badgeIterator.hasNext();) {
-                                BuildBadgeAction b = (BuildBadgeAction) badgeIterator.next();
-                                if(b instanceof CodefreshBuildBadgeAction) {
-                                        if (((CodefreshBuildBadgeAction) b).getType().equals("Environment")){
-                                            ((CodefreshBuildBadgeAction) b).setDisplayName("Codefresh Environment Terminated");
-                                            ((CodefreshBuildBadgeAction) b).setUrl(null);
-                                        
-                                        }
-                                }
-                              }
-                            return true;
-                        }
-                        
-                    } catch (Exception ex) {
-                        Logger.getLogger(CFEnvTerminator.class.getName()).log(Level.SEVERE, null, ex);
+                listener.getLogger().println("Couldn't get Codefresh configuration. Did you define one?");
+                 return true;
+            }
+            CFApi api = new CFApi(config.getCfToken());
+
+
+            try {
+                    String envId = api.getEnvIdByURL(envUrl);
+                    if (! api.terminateEnv(envId))
+                    {
+                        listener.getLogger().println("Couldn't terminate Codefresh environment. Did you launch one?");
                         return true;
                     }
+                    else
+                    {
+                        listener.getLogger().println("Successfully terminated Codefresh environment " + envId + " at " + envUrl);
+                        // remove environment url badge
+                        List<BuildBadgeAction> actions = build.getBadgeActions();
+                        for(Iterator badgeIterator = actions.iterator();
+                                    badgeIterator.hasNext();) {
+                            BuildBadgeAction b = (BuildBadgeAction) badgeIterator.next();
+                            if(b instanceof CodefreshBuildBadgeAction) {
+                                    if (((CodefreshBuildBadgeAction) b).getType().equals("Environment")){
+                                        ((CodefreshBuildBadgeAction) b).setDisplayName("Codefresh Environment Terminated");
+                                        ((CodefreshBuildBadgeAction) b).setUrl(null);
+
+                                    }
+                            }
+                          }
+                        return true;
+                    }
+
+                } catch (Exception ex) {
+                    Logger.getLogger(CFEnvTerminator.class.getName()).log(Level.SEVERE, null, ex);
+                    return true;
             }
         } catch (IOException e){
             listener.getLogger().println("Couldn't get Codefresh configuration. Did you define one?");
             return true;
         }
-        
-        
-        
-        
-        return true;
+
     }
       
     @Extension // This indicates to Jenkins that this is an implementation of an extension point.

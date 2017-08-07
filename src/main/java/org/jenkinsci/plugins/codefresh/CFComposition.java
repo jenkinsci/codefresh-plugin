@@ -15,8 +15,8 @@ public class CFComposition {
     private final String name;
     private final String id;
 
-    public CFComposition(String gitRepo, String id ) {
-        this.name = gitRepo;
+    public CFComposition(String name, String id ) {
+        this.name = name;
         this.id = id;
     }
 

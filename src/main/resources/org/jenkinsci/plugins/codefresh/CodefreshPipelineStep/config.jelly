@@ -1,0 +1,26 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+    <f:entry field="cfPipeline" title="Codefresh pipeline name" name="Pipeline">
+      <f:select />
+    </f:entry>
+    <f:entry field="cfBranch" title="Branch name (optional)" name="Branch (optional)">
+      <f:textbox />
+    </f:entry>
+    <f:entry title="Variables" field="vars">
+     <f:repeatable var="vars" items="${instance.cfVars}" add="Add variable" minimum="1">
+         <fieldset>
+        <table width="50%">
+            <f:entry title="${%Variable}" field="variable">
+                  <f:textbox name="Variable" value="${vars.variable}" default=""/>
+            </f:entry>
+          <f:entry title="${%Value}" field="value">
+             <f:textbox name="Value" value="${vars.value}" default=""/>
+          </f:entry>
+        </table>
+         </fieldset>
+      </f:repeatable>
+      </f:entry>
+    </f:entry>
+   
+</j:jelly>
