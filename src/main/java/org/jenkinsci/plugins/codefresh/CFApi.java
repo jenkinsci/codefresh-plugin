@@ -210,13 +210,22 @@ public class CFApi {
         return processId;
     }
 
-    String launchComposition(String compositionId) throws Exception {
+    String launchComposition(String compositionId, List<CFVariable> vars) throws Exception {
         String launchUrl = httpsUrl + "/compositions/"+compositionId+"/run";
         String launchOptions = "";
         HttpsURLConnection conn = getConnection(launchUrl);
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type","application/json");
 
+        JsonObject options = new JsonObject();
+        if (vars != null){
+            JsonObject var2json = new JsonObject();
+            for (CFVariable var: vars){
+                var2json.addProperty(var.variable, var.value);
+            }
+            options.add("compositionVariables", var2json);
+        }
+        launchOptions = options.toString();
 
         try (OutputStreamWriter outs = new OutputStreamWriter(conn.getOutputStream(),"UTF-8")) {
             outs.write(launchOptions);

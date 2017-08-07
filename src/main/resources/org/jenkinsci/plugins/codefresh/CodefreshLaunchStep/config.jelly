@@ -4,4 +4,18 @@
     <f:entry field="cfComposition" title="Choose composition to launch." name="Composition">
           <f:select />
     </f:entry>
+    <f:entry title="Variables" field="vars">
+     <f:repeatable var="vars" items="${instance.cfVars}" add="Add variable" minimum="1">
+         <fieldset>
+        <table width="50%">
+            <f:entry title="${%Variable}" field="variable">
+                  <f:textbox name="Variable" value="${vars.variable}" default=""/>
+            </f:entry>
+          <f:entry title="${%Value}" field="value">
+             <f:textbox name="Value" value="${vars.value}" default=""/>
+          </f:entry>
+        </table>
+         </fieldset>
+      </f:repeatable>
+      </f:entry>
 </j:jelly>

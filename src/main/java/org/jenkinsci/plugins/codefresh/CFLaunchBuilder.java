@@ -41,26 +41,29 @@ import jenkins.model.Jenkins;
 public class CFLaunchBuilder extends Builder {
 
     private final String cfComposition;
-    private final String properties;
+    private final List<CFVariable> cfVars;
+    private final boolean setCFVars;
      
     @DataBoundConstructor
-    public CFLaunchBuilder(String cfComposition, String properties) {
+    public CFLaunchBuilder(String cfComposition, SetCFVars setCFVars) {
        
         this.cfComposition = cfComposition;
-        this.properties = properties;
-
+        if (setCFVars != null) {
+            this.setCFVars = true;
+            this.cfVars = setCFVars.vars;
+        } else {
+            this.setCFVars = false;
+            this.cfVars = null;
+        }
     }
 
+    public static class SetCFVars {
 
-    public static class SelectService {
-
-        private final String cfService;
-        private final String cfBranch;
+        private final List<CFVariable> vars;
 
         @DataBoundConstructor
-        public SelectService(String cfService, String cfBranch) {
-            this.cfService = cfService;
-            this.cfBranch = cfBranch;
+        public SetCFVars(List<CFVariable> vars) {
+            this.vars = vars;
         }
     }
     
@@ -93,7 +96,7 @@ public class CFLaunchBuilder extends Builder {
         try {
                 listener.getLogger().println("*******\n");
                 String compositionId = profile.getCompositionIdByName(cfComposition);
-                String launchId = api.launchComposition(compositionId);
+                String launchId = api.launchComposition(compositionId, cfVars);
                 JsonObject process = api.getProcess(launchId);
                 String processUrl = api.getBuildUrl(launchId);
                 String status = process.get("status").getAsString();
@@ -143,7 +146,7 @@ public class CFLaunchBuilder extends Builder {
                 //listener.getLogger().println("Composition " + cfComposition + " not found. Exiting");
                 throw new AbortException("Composition " + cfComposition + " not found. Exiting");
             }
-            String launchId = api.launchComposition(compositionId);
+            String launchId = api.launchComposition(compositionId, cfVars);
             JsonObject process = api.getProcess(launchId);
             String status = process.get("status").getAsString();
             String processUrl = api.getBuildUrl(launchId);

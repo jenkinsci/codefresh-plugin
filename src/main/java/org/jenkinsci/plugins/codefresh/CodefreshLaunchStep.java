@@ -32,6 +32,7 @@ import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
@@ -49,7 +50,8 @@ import org.kohsuke.stapler.QueryParameter;
  */
 public class CodefreshLaunchStep extends AbstractStepImpl {
     private String cfComposition = "";
-
+    private List<CFVariable> cfVars = null;  
+    
     
     @DataBoundConstructor
     public CodefreshLaunchStep() {
@@ -66,6 +68,12 @@ public class CodefreshLaunchStep extends AbstractStepImpl {
     public void setCfComposition(String cfComposition) {
         this.cfComposition = cfComposition;
     }
+    
+    @DataBoundSetter
+    public void setCfVars(List<CFVariable> cfVars) {
+        this.cfVars = cfVars;
+    }
+    
   
     @Extension
     public static final class DescriptorImpl extends AbstractStepDescriptorImpl {
@@ -142,8 +150,8 @@ public class CodefreshLaunchStep extends AbstractStepImpl {
         @Override
         protected Boolean run() throws Exception {
             
-       
-        CFLaunchBuilder builder = new CFLaunchBuilder(step.cfComposition,"");
+        CFLaunchBuilder.SetCFVars setVars = new CFLaunchBuilder.SetCFVars(step.cfVars);
+        CFLaunchBuilder builder = new CFLaunchBuilder(step.cfComposition,setVars);
             return builder.performStep(run,listener);
         }
         
