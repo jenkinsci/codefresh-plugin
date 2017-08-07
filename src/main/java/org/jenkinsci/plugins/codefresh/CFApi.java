@@ -96,7 +96,7 @@ public class CFApi {
         return userName;
     }
 
-    public String startBuild(String serviceId, String branch) throws MalformedURLException, IOException
+    public String startBuild(String serviceId, String branch, List<CFVariable> vars) throws MalformedURLException, IOException
     {
         String buildUrl = httpsUrl + "/builds/" + serviceId ;
         String buildOptions = "";
@@ -111,6 +111,13 @@ public class CFApi {
         conn.setRequestProperty("Content-Type","application/json");
         JsonObject options = new JsonObject();
         options.addProperty("branch", branch);
+        if (vars != null){
+            JsonObject var2json = new JsonObject();
+            for (CFVariable var: vars){
+                var2json.addProperty(var.variable, var.value);
+            }
+            options.add("variables", var2json);
+        }
         buildOptions = options.toString();
 
         try (OutputStreamWriter outs = new OutputStreamWriter(conn.getOutputStream(),"UTF-8")) {

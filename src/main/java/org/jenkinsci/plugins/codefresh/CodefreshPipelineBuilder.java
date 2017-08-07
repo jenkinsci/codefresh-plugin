@@ -162,7 +162,7 @@ public class CodefreshPipelineBuilder extends Builder {
 
         listener.getLogger().println("\nTriggering Codefresh pipeline. Service: " + serviceName + ".\n");
 
-        String buildId = api.startBuild(serviceId, branch);
+        String buildId = api.startBuild(serviceId, branch, cfVars);
         JsonObject process = api.getProcess(buildId);
         String status = process.get("status").getAsString();
         String progressUrl = api.getBuildUrl(buildId);
@@ -225,7 +225,7 @@ public class CodefreshPipelineBuilder extends Builder {
 
        listener.getLogger().println("\nTriggering Codefresh build. Pipeline: " + serviceName + ".\n");
 
-       String buildId = api.startBuild(serviceId, branch);
+       String buildId = api.startBuild(serviceId, branch, cfVars);
        JsonObject process = api.getProcess(buildId);
        String status = process.get("status").getAsString();
        String progressUrl = api.getBuildUrl(buildId);
