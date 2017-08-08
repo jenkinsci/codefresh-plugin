@@ -66,8 +66,8 @@ public class CFVariable extends AbstractDescribableImpl<CFVariable>
     } 
     
 
-//    @Extension 
-//    public static class DescriptorImpl extends Descriptor<CFVariable> { 
-//        public String getDisplayName() { return "Codefresh Variables"; } 
-//    } 
+      @Extension 
+      public static class DescriptorImpl extends Descriptor<CFVariable> { 
+          public String getDisplayName() { return "Codefresh Variables"; } 
+      } 
 } 

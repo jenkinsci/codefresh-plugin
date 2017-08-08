@@ -63,6 +63,10 @@ public class CodefreshPipelineStep extends AbstractStepImpl {
     public String getCfPipeline() {
         return cfPipeline;
     }
+    
+    public List<CFVariable> getCfVars(){
+        return cfVars;
+    }
 
     @DataBoundSetter
     public void setCfPipeline(String cfService) {

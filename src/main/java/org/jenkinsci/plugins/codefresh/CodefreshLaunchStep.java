@@ -58,6 +58,10 @@ public class CodefreshLaunchStep extends AbstractStepImpl {
          this.cfComposition = "";
                          
     }
+    
+    public List<CFVariable> getCfVars(){
+        return cfVars;
+    }
 
     
     public String getCfComposition() {

@@ -7,20 +7,19 @@
     <f:entry field="cfBranch" title="Branch name (optional)" name="Branch (optional)">
       <f:textbox />
     </f:entry>
-    <f:entry title="Variables" field="vars">
-     <f:repeatable var="vars" items="${instance.cfVars}" add="Add variable" minimum="1">
+    <f:entry title="Variables">
+     <f:repeatable field="cfVars" add="Add variable" minimum="1">
          <fieldset>
         <table width="50%">
             <f:entry title="${%Variable}" field="variable">
-                  <f:textbox name="Variable" value="${vars.variable}" default=""/>
+                  <f:textbox name="Variable" default=""/>
             </f:entry>
           <f:entry title="${%Value}" field="value">
-             <f:textbox name="Value" value="${vars.value}" default=""/>
+             <f:textbox name="Value" default=""/>
           </f:entry>
         </table>
          </fieldset>
       </f:repeatable>
       </f:entry>
-    </f:entry>
    
 </j:jelly>
