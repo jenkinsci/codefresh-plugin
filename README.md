@@ -21,13 +21,15 @@ You can verify the authentication by using the '_Test Connection_' button.
 
 2. Trigger Codefresh pipeline execution from your freestyle Jenkins jobs:
 
-    - 'Add Build Step' -> 'Codefresh Integration'
-    - 'Run Codefesh build' is checked by default and will trigger the pipeline that corresponds to the git repo defined in the job's SCM configuration.
-    - If there's no SCM defined for current job or you would like to trigger a different service pipeline - check the 'Select Codefresh Service' option. This will present you with drop-down selectable list of all your defined Codefresh services.
+    - 'Add Build Step' -> 'Run Codefresh Pipeline'
+    - If you don't do anything else - this will trigger the pipeline that corresponds to the git repo defined in the job's SCM configuration.
+    - If there's no SCM defined for current job or you would like to trigger a pipeline for a different repository - check the 'Choose service to build' option. This will present you with drop-down selectable list of all your defined Codefresh pipelines.
+    - Optionally define the git branch you want the pipeline to run for. If branch field is left empty - default branch will be built (usually 'master')
+    - Check the 'Set Codefresh Pipeline Variables' checkbox to define environment variables to pass to the build
 
     Screenshot:
 
-![Job Configuration](http://otomato.link/wp-content/uploads/2016/07/Screen-Shot-2016-07-21-at-11.23.15-AM.png)
+![Run Codefresh Pipeline](http://otomato.link/wp-content/uploads/2017/08/Screen-Shot-2017-08-08-at-6.05.22-PM.png)
 
 
 Once configured - the plugin will trigger Codefresh, run your tests and report the results.
@@ -35,3 +37,15 @@ On job completion a Codefresh badge will appear next to the build execution. Cli
 
 
 ![Codefresh Badge](http://otomato.link/wp-content/uploads/2016/07/Screen-Shot-2016-07-21-at-11.39.04-AM.png)
+
+3. Launch Codefresh composition environment from your freestyle Jenkins jobs:
+
+    - This requires you to define at least one docker-compose compositions on your Codefresh account.
+    - 'Add Build Step' -> 'Launch Codefresh Composition'
+    - Choose composition name from the drop-down selectable list of all your defined Codefresh compositions.
+    - Check the 'Set Codefresh Composition Variables' checkbox to define environment variables to pass to the execution environment.
+
+    Screenshot:
+
+![Launch Codefresh Composition](http://otomato.link/wp-content/uploads/2017/08/Screen-Shot-2017-08-08-at-6.11.59-PM.png)
+
