@@ -145,10 +145,10 @@ public class CodefreshPipelineBuilder extends Builder {
             RemoteConfig remote = gitSCM.getRepositories().get(0);
             URIish uri = remote.getURIs().get(0);
             gitPath = uri.getPath();
-            //serviceName = gitPath.split("/")[2].split("\\.")[0];
+            serviceName = gitPath.split("/")[2].split("\\.")[0];
             serviceId = profile.getServiceIdByPath(gitPath);
             if (serviceId == null) {
-                listener.getLogger().println("\nUser " + config.getCfUser() + " has no Codefresh service defined for url " + gitPath + ".\n Exiting.");
+                listener.getLogger().println("\nUser " + config.getCfUser() + " has no Codefresh pipeline defined for url " + gitPath + ".\n Exiting.");
                 return false;
             }
         } else {
@@ -156,17 +156,18 @@ public class CodefreshPipelineBuilder extends Builder {
             serviceId = profile.getServiceIdByName(cfService);
             branch = cfBranch;
             if (serviceId == null) {
-                listener.getLogger().println("\nService Id not found for " + cfService + ".\n Exiting.");
+                listener.getLogger().println("\nPipeline Id not found for " + cfService + ".\n Exiting.");
                 return false;
+            }
         }
-
-        listener.getLogger().println("\nTriggering Codefresh pipeline. Service: " + serviceName + ".\n");
+        
+        listener.getLogger().println("\nTriggering Codefresh pipeline. Pipeline name: " + serviceName + ".\n");
 
         String buildId = api.startBuild(serviceId, branch, cfVars);
         JsonObject process = api.getProcess(buildId);
         String status = process.get("status").getAsString();
         String progressUrl = api.getBuildUrl(buildId);
-            while (status.equals("pending") || status.equals("running") || status.equals("elected")) {
+        while (status.equals("pending") || status.equals("running") || status.equals("elected")) {
             listener.getLogger().println("Codefresh pipeline " + status + " - " + progressUrl + "\n Waiting 5 seconds...");
             Thread.sleep(5 * 1000);
             status = api.getProcess(buildId).get("status").getAsString();
@@ -190,8 +191,6 @@ public class CodefreshPipelineBuilder extends Builder {
                 return false;
         }
 
-        
-        }
         return true;
     }
 
