@@ -21,6 +21,7 @@
              <f:textbox name="Value" value="${vars.value}" default=""/>
           </f:entry>
         </table>
+        <f:repeatableDeleteButton value="${%Delete variable}" />
          </fieldset>
       </f:repeatable>
       </f:entry>

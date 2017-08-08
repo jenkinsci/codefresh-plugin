@@ -15,6 +15,7 @@
              <f:textbox name="Value" default=""/>
           </f:entry>
         </table>
+        <f:repeatableDeleteButton value="${%Delete variable}" />
          </fieldset>
       </f:repeatable>
       </f:entry>
