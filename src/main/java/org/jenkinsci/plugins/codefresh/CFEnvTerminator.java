@@ -100,7 +100,7 @@ public class CFEnvTerminator extends Recorder {
                 listener.getLogger().println("Couldn't get Codefresh configuration. Did you define one?");
                  return true;
             }
-            CFApi api = new CFApi(config.getCfToken());
+            CFApi api = new CFApi(config.getCfToken(), config.getCfUrl());
 
 
             try {

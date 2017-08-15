@@ -1,8 +1,8 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 
-   <f:optionalBlock name="selectService" field="selectService" title="Choose service to build" checked="${instance.selectService}">
-    <f:entry field="cfService" title="Choose Codefresh service">
+   <f:optionalBlock name="selectPipeline" field="selectPipeline" title="Choose pipeline to build" checked="${instance.selectPipeline}">
+    <f:entry field="cfPipeline" title="Choose Codefresh pipeline">
       <f:select />
     </f:entry>
     <f:entry field="cfBranch" title="Branch name (optional)">

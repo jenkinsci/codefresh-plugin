@@ -45,9 +45,10 @@ public class CFApi {
     private static final Logger LOGGER = Logger.getLogger(CFApi.class.getName());
 
 
-    public CFApi(Secret cfToken) throws MalformedURLException, IOException {
+    public CFApi(Secret cfToken, String cfUrl) throws MalformedURLException, IOException {
 
         this.cfToken = cfToken;
+        this.httpsUrl = cfUrl + "/api";
         trustAllCerts = new TrustManager[]{new X509TrustManager(){
             public X509Certificate[] getAcceptedIssuers(){return null;}
             public void checkClientTrusted(X509Certificate[] certs, String authType){}
@@ -66,17 +67,17 @@ public class CFApi {
 
     }
 
-    public List<CFService> getServices() throws MalformedURLException, IOException
+    public List<CFPipeline> getPipelines() throws MalformedURLException, IOException
     {
         String serviceUrl = httpsUrl + "/services";
         HttpsURLConnection conn = getConnection(serviceUrl);
-        List<CFService> services = new ArrayList<CFService>();
+        List<CFPipeline> services = new ArrayList<CFPipeline>();
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
         JsonArray serviceList = new JsonParser().parse(jsonString).getAsJsonArray();
         for (int i = 0; i < serviceList.size(); i++) {
             JsonObject obj = (JsonObject)serviceList.get(i);
-            services.add(new CFService(cfToken, obj.get("name").getAsString(),
+            services.add(new CFPipeline(cfToken, obj.get("name").getAsString(),
                                                 obj.get("_id").getAsString(),
                                                 obj.get("repoOwner").getAsString(),
                                                 obj.get("repoName").getAsString()));

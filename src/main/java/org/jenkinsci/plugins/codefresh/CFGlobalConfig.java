@@ -27,6 +27,7 @@ import hudson.Extension;
 import hudson.util.FormValidation;
 import hudson.util.Secret;
 import java.io.IOException;
+import java.net.URI;
 import static jenkins.YesNoMaybe.YES;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.Jenkins;
@@ -45,6 +46,7 @@ public class CFGlobalConfig extends GlobalConfiguration {
     private String cfUser;
     private Secret cfToken;
     private CFApi api;
+    private String cfUrl;
     
     public static CFGlobalConfig get() {
         Jenkins jenkins = Jenkins.getInstance();
@@ -67,6 +69,8 @@ public class CFGlobalConfig extends GlobalConfiguration {
         // set that to properties and call save().
         cfUser = formData.getString("cfUser");
         cfToken = Secret.fromString(formData.getString("cfToken"));
+        cfUrl = formData.getString("cfUrl");
+        
         save();
         return super.configure(req, formData);
     }
@@ -75,6 +79,10 @@ public class CFGlobalConfig extends GlobalConfiguration {
           return cfUser;
       }
 
+    public String getCfUrl() {
+          return cfUrl;
+      }
+    
     public Secret getCfToken() {
           return cfToken;
     }
@@ -82,7 +90,7 @@ public class CFGlobalConfig extends GlobalConfiguration {
     public FormValidation doTestConnection(@QueryParameter("cfUser") final String cfUser, @QueryParameter("cfToken") final String cfToken) throws IOException {
             String userName = null;
             try {
-                api = new CFApi(Secret.fromString(cfToken));
+                api = new CFApi(Secret.fromString(cfToken), cfUrl);
                 userName = api.getUser();
             } catch (IOException e) {
                 return FormValidation.error("Couldn't connect. Please check your token and internet connection.\n" + e.getMessage());

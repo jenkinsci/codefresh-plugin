@@ -16,16 +16,18 @@ import java.util.List;
 public class CFProfile {
     private final String cfUser;
     private final Secret cfToken;
-    private List<CFService> services;
+    private final String cfUrl;
+    private List<CFPipeline> services;
     private List<CFComposition> compositions;
     private CFApi api;
     //private List<CFService> services;
 
-    public CFProfile(String cfUser, Secret cfToken) throws IOException {
+    public CFProfile(String cfUser, Secret cfToken, String cfUrl) throws IOException {
         this.cfUser = cfUser;
         this.cfToken = cfToken;
-        this.api = new CFApi(this.cfToken);
-        this.services = api.getServices();
+        this.cfUrl = cfUrl;
+        this.api = new CFApi(this.cfToken, this.cfUrl);
+        this.services = api.getPipelines();
         this.compositions = api.getCompositions();
     }
 
@@ -38,7 +40,7 @@ public class CFProfile {
     }
 
     public int testConnection() throws IOException{
-       api = new CFApi(cfToken);
+       api = new CFApi(cfToken, cfUrl);
        
        try{
            api.getConnection("");
@@ -51,7 +53,7 @@ public class CFProfile {
     }
 
     String getServiceIdByName(String serviceName) {
-        for (CFService service: services){
+        for (CFPipeline service: services){
             if (service.getName().equals(serviceName))
             {
                 return service.getId();
@@ -62,7 +64,7 @@ public class CFProfile {
 
     String getServiceIdByPath(String gitPath) {
         String serviceName = gitPath.split("/")[2].split("\\.")[0];      
-        for (CFService service: services){
+        for (CFPipeline service: services){
             if (service.getName().equals(serviceName))
             {
                     return service.getId();
@@ -72,7 +74,7 @@ public class CFProfile {
     }
     
     String getServiceRepoOwner(String serviceId) {
-        for (CFService service: services){
+        for (CFPipeline service: services){
             if (service.getId().equals(serviceId))
             {
                 return service.getRepoOwner();
@@ -82,7 +84,7 @@ public class CFProfile {
     }
 
     String getServiceRepoName(String serviceId) {
-        for (CFService service: services){
+        for (CFPipeline service: services){
             if (service.getId().equals(serviceId))
             {
                 return service.getRepoName();

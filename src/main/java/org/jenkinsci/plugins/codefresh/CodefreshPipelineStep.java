@@ -69,8 +69,8 @@ public class CodefreshPipelineStep extends AbstractStepImpl {
     }
 
     @DataBoundSetter
-    public void setCfPipeline(String cfService) {
-        this.cfPipeline = cfService;
+    public void setCfPipeline(String cfPipeline) {
+        this.cfPipeline = cfPipeline;
     }
     @DataBoundSetter
     public void setCfBranch(String cfBranch) {
@@ -105,11 +105,12 @@ public class CodefreshPipelineStep extends AbstractStepImpl {
         public ListBoxModel doFillCfPipelineItems(@QueryParameter("cfPipeline") String cfPipeline) throws  IOException, MalformedURLException {
             ListBoxModel items = new ListBoxModel();
             //default to global config values if not set in step, but allow step to override all global settings
-            String cfToken = null;
+            String cfToken, cfUrl = null;
             try {
                
                 CFGlobalConfig config = CFGlobalConfig.get();
                 cfToken = config.getCfToken().getPlainText();
+                cfUrl = config.getCfUrl();
             } catch (NullPointerException ne) {
                 Logger.getLogger(CodefreshPipelineStep.class.getName()).log(Level.SEVERE, null, ne);
                 return null;
@@ -120,8 +121,8 @@ public class CodefreshPipelineStep extends AbstractStepImpl {
             }
             
             try {
-                CFApi api = new CFApi(Secret.fromString(cfToken));
-                for (CFService srv: api.getServices())
+                CFApi api = new CFApi(Secret.fromString(cfToken), cfUrl);
+                for (CFPipeline srv: api.getPipelines())
                 {
                     String name = srv.getName();
                     items.add(new ListBoxModel.Option(name, name, cfPipeline.equals(name)));
@@ -158,12 +159,12 @@ public class CodefreshPipelineStep extends AbstractStepImpl {
         @Override
         protected Boolean run() throws Exception {
             
-             CodefreshPipelineBuilder.SelectService service = null;
+             CodefreshPipelineBuilder.SelectPipeline service = null;
              CodefreshPipelineBuilder.SetCFVars vars = null;
           
           
             if (step.cfPipeline != null){
-                service = new CodefreshPipelineBuilder.SelectService(step.cfPipeline, step.cfBranch);
+                service = new CodefreshPipelineBuilder.SelectPipeline(step.cfPipeline, step.cfBranch);
             }
             if (step.cfVars != null){
                 vars = new CodefreshPipelineBuilder.SetCFVars(step.cfVars);

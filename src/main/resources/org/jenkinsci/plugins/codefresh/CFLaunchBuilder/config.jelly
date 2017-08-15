@@ -4,7 +4,7 @@
   <f:entry field="cfComposition" title="Choose composition to launch.">
       <f:select />
    </f:entry>
-   <f:optionalBlock name="setCFVars" field="setCFVars" title="Set Codefresh Pipeline Variables" checked="${instance.setCFVars}">
+   <f:optionalBlock name="setCFVars" field="setCFVars" title="Set Codefresh Environment Variables" checked="${instance.setCFVars}">
       <f:entry title="Variables" field="vars">
      <f:repeatable var="vars" items="${instance.cfVars}" add="Add variable" minimum="1">
          <fieldset>

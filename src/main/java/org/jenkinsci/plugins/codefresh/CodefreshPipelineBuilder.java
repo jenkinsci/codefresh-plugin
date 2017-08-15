@@ -39,23 +39,23 @@ import org.kohsuke.stapler.QueryParameter;
 
 public class CodefreshPipelineBuilder extends Builder {
 
-    private final String cfService;
-    private final boolean selectService;
+    private final String cfPipeline;
+    private final boolean selectPipeline;
     private final boolean setCFVars;
     private final String cfBranch;
     private List<CFVariable> cfVars;
     
 
     @DataBoundConstructor
-    public CodefreshPipelineBuilder(SelectService selectService, SetCFVars setCFVars){
+    public CodefreshPipelineBuilder(SelectPipeline selectService, SetCFVars setCFVars){
  
         if (selectService != null) {
-            this.cfService = selectService.cfService;
+            this.cfPipeline = selectService.cfPipeline;
             this.cfBranch = selectService.cfBranch;
-            this.selectService = true;
+            this.selectPipeline = true;
         } else {
-            this.selectService = false;
-            this.cfService = null;
+            this.selectPipeline = false;
+            this.cfPipeline = null;
             this.cfBranch = "";
         }
         if (setCFVars != null) {
@@ -68,14 +68,14 @@ public class CodefreshPipelineBuilder extends Builder {
 
     }
 
-    public static class SelectService {
+    public static class SelectPipeline {
 
-        private final String cfService;
+        private final String cfPipeline;
         private final String cfBranch;
 
         @DataBoundConstructor
-        public SelectService(String cfService, String cfBranch) {
-            this.cfService = cfService;
+        public SelectPipeline(String cfPipeline, String cfBranch) {
+            this.cfPipeline = cfPipeline;
             this.cfBranch = cfBranch;
         }
     }
@@ -89,8 +89,8 @@ public class CodefreshPipelineBuilder extends Builder {
             this.vars = vars;
         }
     }
-    public String getCfService() {
-        return cfService;
+    public String getCfPipeline() {
+        return cfPipeline;
     }
 
     public String getCfBranch() {
@@ -100,8 +100,8 @@ public class CodefreshPipelineBuilder extends Builder {
     public List<CFVariable> getCfVars() {
         return cfVars;
     }
-    public boolean isSelectService() {
-        return selectService;
+    public boolean isSelectPipeline() {
+        return selectPipeline;
     }
     
     public boolean isSetCFVars(){
@@ -114,7 +114,7 @@ public class CodefreshPipelineBuilder extends Builder {
         CFProfile profile = null;
         CFGlobalConfig config = CFGlobalConfig.get();
         try{
-            profile= new CFProfile(config.getCfUser(), config.getCfToken());
+            profile= new CFProfile(config.getCfUser(), config.getCfToken(), config.getCfUrl());
         }
         catch (NullPointerException ne)
         {
@@ -126,9 +126,9 @@ public class CodefreshPipelineBuilder extends Builder {
         String gitPath = "";
         String branch = "";
 
-        CFApi api = new CFApi(config.getCfToken());
+        CFApi api = new CFApi(config.getCfToken(), config.getCfUrl());
     
-        String serviceName = this.getCfService();
+        String serviceName = this.getCfPipeline();
 
         if (serviceName == null) {
             SCM scm = build.getProject().getScm();
@@ -153,10 +153,10 @@ public class CodefreshPipelineBuilder extends Builder {
             }
         } else {
 
-            serviceId = profile.getServiceIdByName(cfService);
+            serviceId = profile.getServiceIdByName(cfPipeline);
             branch = cfBranch;
             if (serviceId == null) {
-                listener.getLogger().println("\nPipeline Id not found for " + cfService + ".\n Exiting.");
+                listener.getLogger().println("\nPipeline Id not found for " + cfPipeline + ".\n Exiting.");
                 return false;
             }
         }
@@ -198,24 +198,24 @@ public class CodefreshPipelineBuilder extends Builder {
     public boolean performStep(Run run, TaskListener listener) throws IOException, InterruptedException {
 
         CFGlobalConfig config = CFGlobalConfig.get();
-        CFProfile profile = new CFProfile(config.getCfUser(), config.getCfToken());
+        CFProfile profile = new CFProfile(config.getCfUser(), config.getCfToken(), config.getCfUrl());
         String serviceId = "";
         String gitPath = "";
         String branch = "";
 
        
-        CFApi api = new CFApi(config.getCfToken());
-            String serviceName = this.getCfService();
+        CFApi api = new CFApi(config.getCfToken(), config.getCfUrl());
+            String serviceName = this.getCfPipeline();
 
            if (serviceName == null) {
                listener.getLogger().println("\nUser " + config.getCfUser() + "has no Codefresh pipeline defined for url " + gitPath + ".\n Exiting.");
                return false;
            } else {
 
-               serviceId = profile.getServiceIdByName(cfService);
+               serviceId = profile.getServiceIdByName(cfPipeline);
                branch = cfBranch;
                if (serviceId == null) {
-                   listener.getLogger().println("\nPipeline Id not found for " + cfService + ".\n Exiting.");
+                   listener.getLogger().println("\nPipeline Id not found for " + cfPipeline + ".\n Exiting.");
                    return false;
                }
 
@@ -288,21 +288,22 @@ public class CodefreshPipelineBuilder extends Builder {
         }
 
 
-        public ListBoxModel doFillCfServiceItems(@QueryParameter("cfService") String cfService) throws IOException, MalformedURLException {
+        public ListBoxModel doFillCfPipelineItems(@QueryParameter("cfPipeline") String cfPipeline) throws IOException, MalformedURLException {
             ListBoxModel items = new ListBoxModel();
-            String cfToken = null;
+            String cfToken, cfUrl = null;
             try {               
                 CFGlobalConfig config = CFGlobalConfig.get();
                 cfToken = config.getCfToken().getPlainText();
+                cfUrl = config.getCfUrl();
             } catch (NullPointerException ne) {
                 Logger.getLogger(CodefreshPipelineStep.class.getName()).log(Level.SEVERE, null, ne);
                 return null;
             }
             try {
-                api = new CFApi(Secret.fromString(cfToken));
-                for (CFService srv : api.getServices()) {
+                api = new CFApi(Secret.fromString(cfToken), cfUrl);
+                for (CFPipeline srv : api.getPipelines()) {
                     String name = srv.getName();
-                    items.add(new Option(name, name, cfService.equals(name)));
+                    items.add(new Option(name, name, cfPipeline.equals(name)));
 
                 }
             } catch (IOException e) {
@@ -313,61 +314,5 @@ public class CodefreshPipelineBuilder extends Builder {
 
     }
 
-//    public static class CodefreshBuildBadgeAction implements BuildBadgeAction {
-//
-//        private String buildUrl;
-//        private final String buildStatus;
-//        private final String iconFile;
-//        private final String type;
-//        private String displayName;
-//
-//        public CodefreshBuildBadgeAction(String buildUrl, String buildStatus, String type) {
-//            super();
-//            this.buildUrl = buildUrl;
-//            this.buildStatus = buildStatus;
-//            this.type = type;
-//            this.displayName = "Codefresh " + type + " Url";
-//            switch (buildStatus) {
-//                case "success":
-//                    this.iconFile = "/plugin/codefresh/images/16x16/leaves_green.png";
-//                    break;
-//                case "unstable":
-//                    this.iconFile = "/plugin/codefresh/images/16x16/leaves_yellow.png";
-//                    break;
-//                case "error":
-//                    this.iconFile = "/plugin/codefresh/images/16x16/leaves_red.png";
-//                    break;
-//                default:
-//                    this.iconFile = "/plugin/codefresh/images/16x16/leaves_red.png";
-//            }
-//        }
-//
-//        @Override
-//        public String getDisplayName() {
-//            return displayName;
-//        }
-//
-//        @Override
-//        public String getIconFileName() {
-//            return iconFile;
-//        }
-//
-//        @Override
-//        public String getUrlName() {
-//            return buildUrl;
-//        }
-//        
-//        public String getType() {
-//            return type;
-//        }
-//
-//        public void setUrl(String Url) {
-//            this.buildUrl = Url;
-//        }
-//        
-//        public void setDisplayName(String name) {
-//            this.displayName = name;
-//        }
-//    }
 
 }

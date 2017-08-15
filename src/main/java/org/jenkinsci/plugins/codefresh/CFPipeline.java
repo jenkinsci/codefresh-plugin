@@ -11,14 +11,14 @@ import hudson.util.Secret;
  *
  * @author antweiss
  */
-public class CFService {
+public class CFPipeline {
     private final String name;
     private final String id;
     private final Secret cfToken;
     private final String repoOwner;
     private final String repoName;
 
-    public CFService(Secret cfToken, String gitRepo, String id, String repoOwner, String repoName ) {
+    public CFPipeline(Secret cfToken, String gitRepo, String id, String repoOwner, String repoName ) {
         this.name = gitRepo;
         this.cfToken = cfToken;
         this.id = id;
