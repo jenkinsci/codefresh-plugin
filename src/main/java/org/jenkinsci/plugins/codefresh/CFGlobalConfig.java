@@ -47,6 +47,7 @@ public class CFGlobalConfig extends GlobalConfiguration {
     private Secret cfToken;
     private CFApi api;
     private String cfUrl;
+    private boolean selfSignedCert;
     
     public static CFGlobalConfig get() {
         Jenkins jenkins = Jenkins.getInstance();
@@ -70,6 +71,7 @@ public class CFGlobalConfig extends GlobalConfiguration {
         cfUser = formData.getString("cfUser");
         cfToken = Secret.fromString(formData.getString("cfToken"));
         cfUrl = formData.getString("cfUrl");
+        selfSignedCert = formData.getBoolean("selfSignedCert");
         
         save();
         return super.configure(req, formData);
@@ -87,10 +89,16 @@ public class CFGlobalConfig extends GlobalConfiguration {
           return cfToken;
     }
     
-    public FormValidation doTestConnection(@QueryParameter("cfUser") final String cfUser, @QueryParameter("cfToken") final String cfToken) throws IOException {
+    public boolean isSelfSignedCert() {
+        return selfSignedCert;
+    }
+    
+    public FormValidation doTestConnection(@QueryParameter("cfUser") final String cfUser, @QueryParameter("cfToken") final String cfToken, 
+                                                @QueryParameter("cfUrl") final String cfUrl, 
+                                                @QueryParameter("selfSignedCert") final boolean selfSignedCert) throws IOException {
             String userName = null;
             try {
-                api = new CFApi(Secret.fromString(cfToken), cfUrl);
+                api = new CFApi(Secret.fromString(cfToken), cfUrl, selfSignedCert);
                 userName = api.getUser();
             } catch (IOException e) {
                 return FormValidation.error("Couldn't connect. Please check your token and internet connection.\n" + e.getMessage());

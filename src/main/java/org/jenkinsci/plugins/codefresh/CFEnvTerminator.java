@@ -93,15 +93,7 @@ public class CFEnvTerminator extends Recorder {
                 return true;
             }
             
-                
-            CFGlobalConfig config = CFGlobalConfig.get();                   
-            if ( config == null  )
-            {
-                listener.getLogger().println("Couldn't get Codefresh configuration. Did you define one?");
-                 return true;
-            }
-            CFApi api = new CFApi(config.getCfToken(), config.getCfUrl());
-
+            CFApi api = new CFApi();
 
             try {
                     String envId = api.getEnvIdByURL(envUrl);

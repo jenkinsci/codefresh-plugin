@@ -5,6 +5,9 @@
       description="Enter Codefresh URL" >
       <f:textbox default="https://g.codefresh.io" />
     </f:entry>
+    <f:entry title="Accept self-signed certificates" description="checked = yes, unchecked = no">
+        <f:checkbox name="selfSignedCert" field="selfSignedCert" default="false" value="${selfSignedCert}"/>
+    </f:entry>
     <f:entry title="User" field="cfUser"
       description="Enter Codefresh user name">
       <f:textbox />
@@ -13,6 +16,6 @@
       description="Enter Codefresh authorization token">
       <f:password />
     </f:entry>
-    <f:validateButton title="Test Connection" progress="Testing.." method="testConnection" with="cfUser,cfToken" />
+    <f:validateButton title="Test Connection" progress="Testing.." method="testConnection" with="cfUser,cfToken,cfUrl,selfSignedCert" />
   </f:section>
 </j:jelly>

@@ -23,8 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -45,7 +47,7 @@ public class CFApi {
     private static final Logger LOGGER = Logger.getLogger(CFApi.class.getName());
 
 
-    public CFApi(Secret cfToken, String cfUrl) throws MalformedURLException, IOException {
+    public CFApi(Secret cfToken, String cfUrl, boolean selfSignedCert) throws MalformedURLException, IOException {
 
         this.cfToken = cfToken;
         this.httpsUrl = cfUrl + "/api";
@@ -64,6 +66,45 @@ public class CFApi {
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, e.getMessage(), e);
         }
+        if( selfSignedCert ) {
+            HttpsURLConnection.setDefaultHostnameVerifier(
+                new HostnameVerifier(){
+                    @Override
+                    public boolean verify(String hostname,
+                            SSLSession sslSession) {
+                        return true;
+                    }
+            });
+        }
+
+    }
+    
+    public CFApi() throws MalformedURLException, IOException {
+        try {
+            CFGlobalConfig config = CFGlobalConfig.get();
+            if ( config == null  )
+            {
+                LOGGER.log(Level.SEVERE,"Couldn't get Codefresh configuration. Did you define one?");
+                throw new IOException();
+            }
+            this.cfToken = config.getCfToken();
+            this.httpsUrl = config.getCfUrl() + "/api";
+            if( config.isSelfSignedCert() ) {   
+                HttpsURLConnection.setDefaultHostnameVerifier(
+                    new HostnameVerifier(){
+                        @Override
+                        public boolean verify(String hostname,
+                                SSLSession sslSession) {
+                            return true;
+                        }
+                    });
+            }
+        }
+        catch (Exception e)
+        {
+            throw e;
+        } 
+            
 
     }
 

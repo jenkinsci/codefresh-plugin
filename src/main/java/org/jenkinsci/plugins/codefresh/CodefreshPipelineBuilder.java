@@ -47,11 +47,11 @@ public class CodefreshPipelineBuilder extends Builder {
     
 
     @DataBoundConstructor
-    public CodefreshPipelineBuilder(SelectPipeline selectService, SetCFVars setCFVars){
+    public CodefreshPipelineBuilder(SelectPipeline selectPipeline, SetCFVars setCFVars){
  
-        if (selectService != null) {
-            this.cfPipeline = selectService.cfPipeline;
-            this.cfBranch = selectService.cfBranch;
+        if (selectPipeline != null) {
+            this.cfPipeline = selectPipeline.cfPipeline;
+            this.cfBranch = selectPipeline.cfBranch;
             this.selectPipeline = true;
         } else {
             this.selectPipeline = false;
@@ -114,7 +114,7 @@ public class CodefreshPipelineBuilder extends Builder {
         CFProfile profile = null;
         CFGlobalConfig config = CFGlobalConfig.get();
         try{
-            profile= new CFProfile(config.getCfUser(), config.getCfToken(), config.getCfUrl());
+            profile= new CFProfile(config.getCfUser(), config.getCfToken(), config.getCfUrl(), false);
         }
         catch (NullPointerException ne)
         {
@@ -126,7 +126,7 @@ public class CodefreshPipelineBuilder extends Builder {
         String gitPath = "";
         String branch = "";
 
-        CFApi api = new CFApi(config.getCfToken(), config.getCfUrl());
+        CFApi api = new CFApi();
     
         String serviceName = this.getCfPipeline();
 
@@ -198,13 +198,13 @@ public class CodefreshPipelineBuilder extends Builder {
     public boolean performStep(Run run, TaskListener listener) throws IOException, InterruptedException {
 
         CFGlobalConfig config = CFGlobalConfig.get();
-        CFProfile profile = new CFProfile(config.getCfUser(), config.getCfToken(), config.getCfUrl());
+        CFProfile profile = new CFProfile(config.getCfUser(), config.getCfToken(), config.getCfUrl(), false);
         String serviceId = "";
         String gitPath = "";
         String branch = "";
 
        
-        CFApi api = new CFApi(config.getCfToken(), config.getCfUrl());
+        CFApi api = new CFApi();
             String serviceName = this.getCfPipeline();
 
            if (serviceName == null) {
@@ -291,16 +291,9 @@ public class CodefreshPipelineBuilder extends Builder {
         public ListBoxModel doFillCfPipelineItems(@QueryParameter("cfPipeline") String cfPipeline) throws IOException, MalformedURLException {
             ListBoxModel items = new ListBoxModel();
             String cfToken, cfUrl = null;
-            try {               
-                CFGlobalConfig config = CFGlobalConfig.get();
-                cfToken = config.getCfToken().getPlainText();
-                cfUrl = config.getCfUrl();
-            } catch (NullPointerException ne) {
-                Logger.getLogger(CodefreshPipelineStep.class.getName()).log(Level.SEVERE, null, ne);
-                return null;
-            }
+            
             try {
-                api = new CFApi(Secret.fromString(cfToken), cfUrl);
+                api = new CFApi();
                 for (CFPipeline srv : api.getPipelines()) {
                     String name = srv.getName();
                     items.add(new Option(name, name, cfPipeline.equals(name)));

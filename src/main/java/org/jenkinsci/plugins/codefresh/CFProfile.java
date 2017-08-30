@@ -20,13 +20,15 @@ public class CFProfile {
     private List<CFPipeline> services;
     private List<CFComposition> compositions;
     private CFApi api;
+    private boolean selfSignedCert;
     //private List<CFService> services;
 
-    public CFProfile(String cfUser, Secret cfToken, String cfUrl) throws IOException {
+    public CFProfile(String cfUser, Secret cfToken, String cfUrl, boolean selfSignedCert) throws IOException {
         this.cfUser = cfUser;
         this.cfToken = cfToken;
         this.cfUrl = cfUrl;
-        this.api = new CFApi(this.cfToken, this.cfUrl);
+        this.selfSignedCert = selfSignedCert;
+        this.api = new CFApi();
         this.services = api.getPipelines();
         this.compositions = api.getCompositions();
     }
@@ -40,7 +42,7 @@ public class CFProfile {
     }
 
     public int testConnection() throws IOException{
-       api = new CFApi(cfToken, cfUrl);
+       api = new CFApi(cfToken, cfUrl, selfSignedCert );
        
        try{
            api.getConnection("");

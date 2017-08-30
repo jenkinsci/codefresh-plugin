@@ -82,7 +82,7 @@ public class CFLaunchBuilder extends Builder {
         CFProfile profile = null;
         CFGlobalConfig config = CFGlobalConfig.get();
         try{
-            profile= new CFProfile(config.getCfUser(), config.getCfToken(), config.getCfUrl());
+            profile= new CFProfile(config.getCfUser(), config.getCfToken(), config.getCfUrl(), false);
         }
         catch (NullPointerException ne)
         {
@@ -91,7 +91,7 @@ public class CFLaunchBuilder extends Builder {
         }
 
     
-        CFApi api = new CFApi(config.getCfToken(), config.getCfUrl());
+        CFApi api = new CFApi(config.getCfToken(), config.getCfUrl(), config.isSelfSignedCert());
         
         try {
                 listener.getLogger().println("*******\n");
@@ -135,10 +135,10 @@ public class CFLaunchBuilder extends Builder {
     public boolean performStep(Run run, TaskListener listener) throws IOException, InterruptedException {
 
         CFGlobalConfig config = CFGlobalConfig.get();
-        CFProfile profile = new CFProfile(config.getCfUser(), config.getCfToken(), config.getCfUrl());
+        CFProfile profile = new CFProfile(config.getCfUser(), config.getCfToken(), config.getCfUrl(), false);
        
                 
-        CFApi api = new CFApi(config.getCfToken(), config.getCfUrl());
+        CFApi api = new CFApi(config.getCfToken(), config.getCfUrl(),config.isSelfSignedCert());
         try {
             listener.getLogger().println("*******\n");
             String compositionId = profile.getCompositionIdByName(cfComposition);
@@ -209,16 +209,19 @@ public class CFLaunchBuilder extends Builder {
         public ListBoxModel doFillCfCompositionItems(@QueryParameter("cfComposition") String cfComposition) throws IOException, MalformedURLException {
             ListBoxModel items = new ListBoxModel();
             String cfToken, cfUrl = null;
+            boolean selfSignedCert = false;
             try {               
                 CFGlobalConfig config = CFGlobalConfig.get();
                 cfToken = config.getCfToken().getPlainText();
                 cfUrl = config.getCfUrl();
+                selfSignedCert = config.isSelfSignedCert();
+                
             } catch (NullPointerException ne) {
                 Logger.getLogger(CodefreshPipelineStep.class.getName()).log(Level.SEVERE, null, ne);
                 return null;
             }
             try {
-                api = new CFApi(Secret.fromString(cfToken), cfUrl);
+                api = new CFApi(Secret.fromString(cfToken), cfUrl, selfSignedCert);
                 for (CFComposition comp : api.getCompositions()) {
                     String name = comp.getName();
                     items.add(new Option(name, name, cfComposition.equals(name)));

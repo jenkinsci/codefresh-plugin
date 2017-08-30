@@ -104,24 +104,9 @@ public class CodefreshPipelineStep extends AbstractStepImpl {
         
         public ListBoxModel doFillCfPipelineItems(@QueryParameter("cfPipeline") String cfPipeline) throws  IOException, MalformedURLException {
             ListBoxModel items = new ListBoxModel();
-            //default to global config values if not set in step, but allow step to override all global settings
-            String cfToken, cfUrl = null;
-            try {
-               
-                CFGlobalConfig config = CFGlobalConfig.get();
-                cfToken = config.getCfToken().getPlainText();
-                cfUrl = config.getCfUrl();
-            } catch (NullPointerException ne) {
-                Logger.getLogger(CodefreshPipelineStep.class.getName()).log(Level.SEVERE, null, ne);
-                return null;
-            }
-            
-            if (cfToken == null){
-                throw new IOException("No Codefresh Integration Defined!!! Please configure in System Settings.");
-            }
             
             try {
-                CFApi api = new CFApi(Secret.fromString(cfToken), cfUrl);
+                CFApi api = new CFApi();
                 for (CFPipeline srv: api.getPipelines())
                 {
                     String name = srv.getName();
