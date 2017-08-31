@@ -66,6 +66,13 @@ public class CFLaunchBuilder extends Builder {
             this.vars = vars;
         }
     }
+    public List<CFVariable> getCfVars() {
+        return cfVars;
+    }
+    
+    public boolean isSetCFVars(){
+        return setCFVars;
+    }
     
     public String getCfComposition() {
         return cfComposition;
