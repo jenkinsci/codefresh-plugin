@@ -1,5 +1,7 @@
 ![Codefresh Logo](/src/main/webapp/images/24x24/leaves_green.png?raw=true "Codefresh")
 
+[![Codefresh build status]( https://g.codefresh.io/api/badges/build?repoOwner=jenkinsci&repoName=codefresh-plugin&branch=master&pipelineName=codefresh-plugin&accountName=antweiss_github&type=cf-1)]( https://g.codefresh.io/repositories/jenkinsci/codefresh-plugin/builds?filter=trigger:build;branch:master;service:5979c46d587b160001541892~codefresh-plugin)
+
 [Codefresh](http://g.codefresh.io) Plugin for Jenkins
 
 The purpose of this plugin is to allow integrating [Codefresh](http://g.codefresh.io)  docker flow pipelines into your existing Jenkins flows.
