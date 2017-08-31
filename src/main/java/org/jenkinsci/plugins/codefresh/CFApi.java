@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.SecureRandom;
@@ -41,8 +42,9 @@ import org.jsoup.*;
 public class CFApi {
 
     private SSLSocketFactory sf = null;
-    private String httpsUrl = "https://g.codefresh.io/api";
+    private String cfUrl = "https://g.codefresh.io/api";
     private Secret cfToken;
+    private boolean https = false;
     private TrustManager[] trustAllCerts;
     private static final Logger LOGGER = Logger.getLogger(CFApi.class.getName());
 
@@ -50,31 +52,9 @@ public class CFApi {
     public CFApi(Secret cfToken, String cfUrl, boolean selfSignedCert) throws MalformedURLException, IOException {
 
         this.cfToken = cfToken;
-        this.httpsUrl = cfUrl + "/api";
-        trustAllCerts = new TrustManager[]{new X509TrustManager(){
-            public X509Certificate[] getAcceptedIssuers(){return null;}
-            public void checkClientTrusted(X509Certificate[] certs, String authType){}
-            public void checkServerTrusted(X509Certificate[] certs, String authType){}
-        }};
-
-        // Install the all-trusting trust manager
-        try {
-            SSLContext sc = SSLContext.getInstance("TLS");
-            sc.init(null, trustAllCerts, new SecureRandom());
-            this.sf = sc.getSocketFactory();
-            HttpsURLConnection.setDefaultSSLSocketFactory(this.sf);
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, e.getMessage(), e);
-        }
-        if( selfSignedCert ) {
-            HttpsURLConnection.setDefaultHostnameVerifier(
-                new HostnameVerifier(){
-                    @Override
-                    public boolean verify(String hostname,
-                            SSLSession sslSession) {
-                        return true;
-                    }
-            });
+        this.cfUrl = cfUrl + "/api";
+        if (cfUrl.contains("https")){
+             secureContext(selfSignedCert);
         }
 
     }
@@ -88,16 +68,9 @@ public class CFApi {
                 throw new IOException();
             }
             this.cfToken = config.getCfToken();
-            this.httpsUrl = config.getCfUrl() + "/api";
-            if( config.isSelfSignedCert() ) {   
-                HttpsURLConnection.setDefaultHostnameVerifier(
-                    new HostnameVerifier(){
-                        @Override
-                        public boolean verify(String hostname,
-                                SSLSession sslSession) {
-                            return true;
-                        }
-                    });
+            this.cfUrl = config.getCfUrl() + "/api";
+            if (cfUrl.contains("https")){
+                secureContext(config.isSelfSignedCert());
             }
         }
         catch (Exception e)
@@ -110,8 +83,8 @@ public class CFApi {
 
     public List<CFPipeline> getPipelines() throws MalformedURLException, IOException
     {
-        String serviceUrl = httpsUrl + "/services";
-        HttpsURLConnection conn = getConnection(serviceUrl);
+        String serviceUrl = cfUrl + "/services";
+        HttpURLConnection conn = getConnection(serviceUrl);
         List<CFPipeline> services = new ArrayList<CFPipeline>();
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
@@ -128,8 +101,8 @@ public class CFApi {
 
     public String getUser() throws MalformedURLException, IOException
     {
-        String userUrl = httpsUrl + "/user";
-        HttpsURLConnection conn = getConnection(userUrl);
+        String userUrl = cfUrl + "/user";
+        HttpURLConnection conn = getConnection(userUrl);
         conn.setRequestMethod("GET");
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
@@ -140,9 +113,9 @@ public class CFApi {
 
     public String startBuild(String serviceId, String branch, List<CFVariable> vars) throws MalformedURLException, IOException
     {
-        String buildUrl = httpsUrl + "/builds/" + serviceId ;
+        String buildUrl = cfUrl + "/builds/" + serviceId ;
         String buildOptions = "";
-        HttpsURLConnection conn = getConnection(buildUrl);
+        HttpURLConnection conn = getConnection(buildUrl);
         conn.setRequestMethod("POST");
         //branch can not be empty - use master if no value provided
         if (branch.isEmpty())
@@ -176,25 +149,28 @@ public class CFApi {
         return IOUtils.toString(is).replace("\"", "");
     }
 
-    public HttpsURLConnection getConnection(String urlString) throws MalformedURLException, IOException {
+    public HttpURLConnection getConnection(String urlString) throws MalformedURLException, IOException {
         if ( urlString.isEmpty())
         {
-            urlString = httpsUrl;
+            urlString = cfUrl;
         }
         URL connUrl = new URL(urlString);
-        HttpsURLConnection conn = (HttpsURLConnection) connUrl.openConnection();
+        HttpURLConnection conn = (HttpURLConnection) connUrl.openConnection();
         conn.setRequestProperty("x-access-token", cfToken.getPlainText());
         conn.setUseCaches(false);
         conn.setDoOutput(true);
         conn.setDoInput(true);
-        HttpsURLConnection.setFollowRedirects(true);
         conn.setInstanceFollowRedirects(true);
+        if (https){
+            HttpsURLConnection.setFollowRedirects(true);
+            return (HttpsURLConnection) conn;
+        }  
         return conn;
     }
 
     String getBuildProgress(String buildId) throws IOException {
-        String buildUrl = httpsUrl + "/builds/" + buildId;
-        HttpsURLConnection conn = getConnection(buildUrl);
+        String buildUrl = cfUrl + "/builds/" + buildId;
+        HttpURLConnection conn = getConnection(buildUrl);
         conn.setRequestMethod("GET");
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
@@ -204,8 +180,8 @@ public class CFApi {
     }
 
     JsonObject getProcess(String processId) throws IOException {
-        String progressUrl = httpsUrl + "/builds/" + processId;
-        HttpsURLConnection conn = getConnection(progressUrl);
+        String progressUrl = cfUrl + "/builds/" + processId;
+        HttpURLConnection conn = getConnection(progressUrl);
         conn.setRequestMethod("GET");
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
@@ -215,15 +191,15 @@ public class CFApi {
     }
 
     String getBuildUrl(String progressId) throws IOException {
-        String buildUrl = "https://g.codefresh.io" + "/process/" + progressId;
+        String buildUrl = cfUrl.substring(0, cfUrl.lastIndexOf('/')) + "/process/" + progressId;
         return buildUrl;
     }
 
     String launchService(String serviceId, String repoOwner, String repoName, String branch) throws Exception {
-        String launchUrl = httpsUrl + "/runtime/testit";
+        String launchUrl = cfUrl + "/runtime/testit";
         String launchOptions = "";
        // URL launchEP = new URL(launchUrl);
-        HttpsURLConnection conn = getConnection(launchUrl);
+        HttpURLConnection conn = getConnection(launchUrl);
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type","application/json");
 
@@ -253,9 +229,9 @@ public class CFApi {
     }
 
     String launchComposition(String compositionId, List<CFVariable> vars) throws Exception {
-        String launchUrl = httpsUrl + "/compositions/"+compositionId+"/run";
+        String launchUrl = cfUrl + "/compositions/"+compositionId+"/run";
         String launchOptions = "";
-        HttpsURLConnection conn = getConnection(launchUrl);
+        HttpURLConnection conn = getConnection(launchUrl);
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type","application/json");
 
@@ -317,8 +293,8 @@ public class CFApi {
     }
 
     JsonArray getEnvByProgressID(String progressId) throws IOException {
-        String progressUrl = httpsUrl + "/environments?progress=" + progressId;
-        HttpsURLConnection conn = getConnection(progressUrl);
+        String progressUrl = cfUrl + "/environments?progress=" + progressId;
+        HttpURLConnection conn = getConnection(progressUrl);
         conn.setRequestMethod("GET");
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
@@ -335,8 +311,8 @@ public class CFApi {
     }
     
     String getEnvIdByURL(String envURL) throws IOException {
-        String getEnvsUrl = httpsUrl + "/environments";
-        HttpsURLConnection conn = getConnection(getEnvsUrl);
+        String getEnvsUrl = cfUrl + "/environments";
+        HttpURLConnection conn = getConnection(getEnvsUrl);
         conn.setRequestMethod("GET");
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
@@ -361,8 +337,8 @@ public class CFApi {
     }
     
     String getFinalLogs(String progressId) throws IOException {
-        String getLogsUrl = httpsUrl + "/progress/download/" + progressId ;
-        HttpsURLConnection conn = getConnection(getLogsUrl);
+        String getLogsUrl = cfUrl + "/progress/download/" + progressId ;
+        HttpURLConnection conn = getConnection(getLogsUrl);
         conn.setRequestMethod("GET");
         InputStream is = conn.getInputStream();
         String logsHtml = IOUtils.toString(is);
@@ -371,8 +347,8 @@ public class CFApi {
 
     public List<CFComposition> getCompositions() throws MalformedURLException, IOException
     {
-        String compositionUrl = httpsUrl + "/compositions";
-        HttpsURLConnection conn = getConnection(compositionUrl);
+        String compositionUrl = cfUrl + "/compositions";
+        HttpURLConnection conn = getConnection(compositionUrl);
         List<CFComposition> compositions = new ArrayList<CFComposition>();
         conn.setRequestMethod("GET");
         InputStream is = conn.getInputStream();
@@ -387,9 +363,9 @@ public class CFApi {
     }
 
     boolean terminateEnv(String envId) throws Exception {
-        String terminateUrl = httpsUrl + "/environments/"+envId+"/terminate";
+        String terminateUrl = cfUrl + "/environments/"+envId+"/terminate";
         String launchOptions = "";
-        HttpsURLConnection conn = getConnection(terminateUrl);
+        HttpURLConnection conn = getConnection(terminateUrl);
         conn.setRequestMethod("GET");
         
         InputStream is = conn.getInputStream();
@@ -398,6 +374,35 @@ public class CFApi {
                     return true;
         }
         return false;
+    }
+
+    private void secureContext(boolean selfSignedCert) {
+        this.https = true;
+        trustAllCerts = new TrustManager[]{new X509TrustManager(){
+            public X509Certificate[] getAcceptedIssuers(){return null;}
+            public void checkClientTrusted(X509Certificate[] certs, String authType){}
+            public void checkServerTrusted(X509Certificate[] certs, String authType){}
+        }};
+
+        // Install the all-trusting trust manager
+        try {
+            SSLContext sc = SSLContext.getInstance("TLS");
+            sc.init(null, trustAllCerts, new SecureRandom());
+            this.sf = sc.getSocketFactory();
+            HttpsURLConnection.setDefaultSSLSocketFactory(this.sf);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, e.getMessage(), e);
+        }
+        if( selfSignedCert ) {
+            HttpsURLConnection.setDefaultHostnameVerifier(
+                new HostnameVerifier(){
+                    @Override
+                    public boolean verify(String hostname,
+                            SSLSession sslSession) {
+                        return true;
+                    }
+            });
+        }
     }
 
 }
