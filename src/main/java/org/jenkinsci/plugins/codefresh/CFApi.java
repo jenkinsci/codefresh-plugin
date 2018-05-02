@@ -18,6 +18,7 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -81,20 +82,40 @@ public class CFApi {
 
     }
 
-    public List<CFPipeline> getPipelines() throws MalformedURLException, IOException
+//    public List<CFPipeline> getPipelines() throws MalformedURLException, IOException
+//    {
+//        String serviceUrl = cfUrl + "/services";
+//        HttpURLConnection conn = getConnection(serviceUrl);
+//        List<CFPipeline> services = new ArrayList<CFPipeline>();
+//        InputStream is = conn.getInputStream();
+//        String jsonString = IOUtils.toString(is);
+//        JsonArray serviceList = new JsonParser().parse(jsonString).getAsJsonArray();
+//        for (int i = 0; i < serviceList.size(); i++) {
+//            JsonObject obj = (JsonObject)serviceList.get(i);
+//            services.add(new CFPipeline(cfToken, obj.get("name").getAsString(),
+//                                                obj.get("_id").getAsString(),
+//                                                obj.get("repoOwner").getAsString(),
+//                                                obj.get("repoName").getAsString()));
+//        }
+//        return services;
+//    }
+
+    public List<CFPipeline> getPipelines() throws IOException
     {
-        String serviceUrl = cfUrl + "/services";
+        String serviceUrl = cfUrl + "/pipelines";
         HttpURLConnection conn = getConnection(serviceUrl);
         List<CFPipeline> services = new ArrayList<CFPipeline>();
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
-        JsonArray serviceList = new JsonParser().parse(jsonString).getAsJsonArray();
-        for (int i = 0; i < serviceList.size(); i++) {
-            JsonObject obj = (JsonObject)serviceList.get(i);
-            services.add(new CFPipeline(cfToken, obj.get("name").getAsString(),
-                                                obj.get("_id").getAsString(),
-                                                obj.get("repoOwner").getAsString(),
-                                                obj.get("repoName").getAsString()));
+        JsonParser parser = new JsonParser();
+        JsonArray serviceList;
+        if(parser.parse(jsonString).getAsJsonObject().get("docs") != null) {
+            serviceList = new JsonParser().parse(jsonString).getAsJsonObject().get("docs").getAsJsonArray();
+            for (JsonElement service:serviceList) {
+                String name = service.getAsJsonObject().getAsJsonObject("metadata").get("name").getAsString();
+                String id = URLEncoder.encode(name, "UTF-8");
+                services.add(new CFPipeline(cfToken, name, id));
+            }
         }
         return services;
     }
@@ -124,6 +145,8 @@ public class CFApi {
         }
         
         conn.setRequestProperty("Content-Type","application/json");
+        conn.setRequestProperty("User-Agent","jenkins-plugin1.7");
+        conn.setRequestProperty("Codefresh-Agent","jenkins-plugin");
         JsonObject options = new JsonObject();
         options.addProperty("branch", branch);
         if (vars != null){
@@ -202,7 +225,8 @@ public class CFApi {
         HttpURLConnection conn = getConnection(launchUrl);
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type","application/json");
-
+        conn.setRequestProperty("User-Agent","jenkins-plugin1.7");
+        conn.setRequestProperty("Codefresh-Agent","jenkins-plugin");
         JsonObject options = new JsonObject();
 
         options.addProperty("repoOwner", repoOwner);
@@ -234,6 +258,8 @@ public class CFApi {
         HttpURLConnection conn = getConnection(launchUrl);
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type","application/json");
+        conn.setRequestProperty("User-Agent","jenkins-plugin1.7");
+        conn.setRequestProperty("Codefresh-Agent","jenkins-plugin");
 
         JsonObject options = new JsonObject();
         if (vars != null){
