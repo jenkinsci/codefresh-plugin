@@ -26,6 +26,14 @@ public class CFPipeline {
         this.repoName = repoName;
     }
 
+    public CFPipeline(Secret cfToken, String gitRepo, String id) {
+        this.name = gitRepo;
+        this.cfToken = cfToken;
+        this.id = id;
+        this.repoOwner = null;
+        this.repoName = null;
+    }
+
     public String getName() {
         return name;
     }
