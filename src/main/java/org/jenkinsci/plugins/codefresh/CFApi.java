@@ -110,7 +110,8 @@ public class CFApi {
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
         JsonObject user = new JsonParser().parse(jsonString).getAsJsonObject();
-        return user.get("userName").getAsString();
+        String userName = user.get("userName").getAsString();
+        return userName;
     }
 
     public String startBuild(String serviceId, String branch, List<CFVariable> vars) throws MalformedURLException, IOException
@@ -179,7 +180,8 @@ public class CFApi {
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
         JsonObject build = new JsonParser().parse(jsonString).getAsJsonObject();
-        return build.get("progress_id").getAsString();
+        String progress = build.get("progress_id").getAsString();
+        return progress;
     }
 
     JsonObject getProcess(String processId) throws IOException {
@@ -188,12 +190,14 @@ public class CFApi {
         conn.setRequestMethod("GET");
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
+        JsonObject progress = new JsonParser().parse(jsonString).getAsJsonObject();
         //String status = progress.get("status").getAsString();
-        return new JsonParser().parse(jsonString).getAsJsonObject();
+        return progress;
     }
 
     String getBuildUrl(String progressId) throws IOException {
-        return cfUrl.substring(0, cfUrl.lastIndexOf('/')) + "/process/" + progressId;
+        String buildUrl = cfUrl.substring(0, cfUrl.lastIndexOf('/')) + "/process/" + progressId;
+        return buildUrl;
     }
 
     String launchService(String serviceId, String repoOwner, String repoName, String branch) throws Exception {
