@@ -82,24 +82,6 @@ public class CFApi {
 
     }
 
-//    public List<CFPipeline> getPipelines() throws MalformedURLException, IOException
-//    {
-//        String serviceUrl = cfUrl + "/services";
-//        HttpURLConnection conn = getConnection(serviceUrl);
-//        List<CFPipeline> services = new ArrayList<CFPipeline>();
-//        InputStream is = conn.getInputStream();
-//        String jsonString = IOUtils.toString(is);
-//        JsonArray serviceList = new JsonParser().parse(jsonString).getAsJsonArray();
-//        for (int i = 0; i < serviceList.size(); i++) {
-//            JsonObject obj = (JsonObject)serviceList.get(i);
-//            services.add(new CFPipeline(cfToken, obj.get("name").getAsString(),
-//                                                obj.get("_id").getAsString(),
-//                                                obj.get("repoOwner").getAsString(),
-//                                                obj.get("repoName").getAsString()));
-//        }
-//        return services;
-//    }
-
     public List<CFPipeline> getPipelines() throws IOException
     {
         String serviceUrl = cfUrl + "/pipelines";
@@ -128,8 +110,7 @@ public class CFApi {
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
         JsonObject user = new JsonParser().parse(jsonString).getAsJsonObject();
-        String userName = user.get("userName").getAsString();
-        return userName;
+        return user.get("userName").getAsString();
     }
 
     public String startBuild(String serviceId, String branch, List<CFVariable> vars) throws MalformedURLException, IOException
@@ -198,8 +179,7 @@ public class CFApi {
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
         JsonObject build = new JsonParser().parse(jsonString).getAsJsonObject();
-        String progress = build.get("progress_id").getAsString();
-        return progress;
+        return build.get("progress_id").getAsString();
     }
 
     JsonObject getProcess(String processId) throws IOException {
@@ -208,14 +188,12 @@ public class CFApi {
         conn.setRequestMethod("GET");
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
-        JsonObject progress = new JsonParser().parse(jsonString).getAsJsonObject();
         //String status = progress.get("status").getAsString();
-        return progress;
+        return new JsonParser().parse(jsonString).getAsJsonObject();
     }
 
     String getBuildUrl(String progressId) throws IOException {
-        String buildUrl = cfUrl.substring(0, cfUrl.lastIndexOf('/')) + "/process/" + progressId;
-        return buildUrl;
+        return cfUrl.substring(0, cfUrl.lastIndexOf('/')) + "/process/" + progressId;
     }
 
     String launchService(String serviceId, String repoOwner, String repoName, String branch) throws Exception {
