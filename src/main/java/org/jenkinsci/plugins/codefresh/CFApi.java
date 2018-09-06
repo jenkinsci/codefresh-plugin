@@ -49,6 +49,8 @@ public class CFApi {
     private TrustManager[] trustAllCerts;
     private static final Logger LOGGER = Logger.getLogger(CFApi.class.getName());
 
+    private static final Integer PIPELINE_BATCH_SIZE = 50;
+
 
     public CFApi(Secret cfToken, String cfUrl, boolean selfSignedCert) throws MalformedURLException, IOException {
 
@@ -82,18 +84,30 @@ public class CFApi {
 
     }
 
-    public List<CFPipeline> getPipelines() throws IOException
-    {
-        String serviceUrl = cfUrl + "/pipelines";
-        HttpURLConnection conn = getConnection(serviceUrl);
+    public List<CFPipeline> getPipelines() throws IOException {
+        List<CFPipeline> pipelines = new ArrayList<>();
+        List<CFPipeline> batch;
+        int offset = 0;
+        int limit = PIPELINE_BATCH_SIZE;
+        while (!(batch = getPipelines(offset, limit)).isEmpty()) {
+            pipelines.addAll(batch);
+            offset += PIPELINE_BATCH_SIZE;
+            limit += PIPELINE_BATCH_SIZE;
+            LOGGER.info("Load pipelines batch from " + offset + " to " + limit);
+        }
+        return pipelines;
+    }
+
+    public List<CFPipeline> getPipelines(int offset, int limit) throws IOException {
+        HttpURLConnection conn = getConnection(String.format(cfUrl + "/pipelines?offset=%d&limit=%d", offset, limit));
         List<CFPipeline> services = new ArrayList<CFPipeline>();
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
         JsonParser parser = new JsonParser();
         JsonArray serviceList;
-        if(parser.parse(jsonString).getAsJsonObject().get("docs") != null) {
+        if (parser.parse(jsonString).getAsJsonObject().get("docs") != null) {
             serviceList = new JsonParser().parse(jsonString).getAsJsonObject().get("docs").getAsJsonArray();
-            for (JsonElement service:serviceList) {
+            for (JsonElement service : serviceList) {
                 String name = service.getAsJsonObject().getAsJsonObject("metadata").get("name").getAsString();
                 String id = URLEncoder.encode(name, "UTF-8");
                 services.add(new CFPipeline(cfToken, name, id));
